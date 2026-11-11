@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#100d19">
+<title>Anna's Song ♡</title>
+<style>
+:root{--bg:#100d19;--panel:#1b1628;--panel2:#241d35;--pink:#f4a9d4;--lav:#c8b5ff;--muted:#a99fb8;--white:#fff9ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 15% 0%,#38254b 0,transparent 38%),radial-gradient(ellipse at 95% 20%,#342044 0,transparent 32%),var(--bg);color:var(--white);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+.wrap{max-width:1120px;margin:auto;padding:26px 22px 130px}.top{display:flex;justify-content:space-between;align-items:center;gap:14px}.brand{font-weight:800;letter-spacing:.3px;font-size:21px}.brand span{color:var(--pink)}.pill{border:1px solid #ffffff20;border-radius:99px;padding:9px 13px;color:var(--muted);font-size:12px}
+.hero{margin:54px 0 34px;display:grid;grid-template-columns:1.3fr .7fr;gap:28px;align-items:center}.eyebrow{color:var(--pink);font-size:12px;letter-spacing:2.5px;text-transform:uppercase}.hero h1{font-size:clamp(42px,7vw,76px);line-height:.98;margin:14px 0 18px;letter-spacing:-3px}.hero h1 em{font-style:normal;color:var(--lav)}.hero p{color:var(--muted);max-width:520px;line-height:1.7;margin:0}.orb{height:250px;border-radius:34px;background:linear-gradient(145deg,#f3b2d8,#9b83d9 55%,#4c3a70);display:grid;place-items:center;box-shadow:0 25px 70px #0006;position:relative;overflow:hidden}.orb:before,.orb:after{content:"";position:absolute;border:1px solid #ffffff55;border-radius:50%;width:210px;height:210px}.orb:after{width:155px;height:155px}.vinyl{width:135px;height:135px;border-radius:50%;background:repeating-radial-gradient(circle,#18131f 0 3px,#282033 4px 6px);display:grid;place-items:center;z-index:1;box-shadow:0 10px 35px #27172c88}.vinyl i{width:38px;height:38px;border-radius:50%;background:var(--pink);display:block;border:8px solid #f8d8ed}
+.sectionhead{display:flex;justify-content:space-between;align-items:end;margin:38px 0 16px}.sectionhead h2{font-size:22px;margin:0}.sectionhead small{color:var(--muted)}.panel{background:#ffffff08;border:1px solid #ffffff12;border-radius:24px;padding:22px}.empty{min-height:190px;display:grid;place-items:center;text-align:center;color:var(--muted)}.empty .note{font-size:34px;margin-bottom:10px}.empty strong{display:block;color:var(--white);font-size:16px;margin-bottom:7px}.empty p{font-size:13px;line-height:1.6;margin:0}.songs{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:15px}.song{background:var(--panel);border:1px solid #ffffff10;border-radius:18px;padding:12px}.cover{aspect-ratio:1;border-radius:13px;background:linear-gradient(135deg,#483459,#a77ab1);display:grid;place-items:center;font-size:40px;overflow:hidden}.cover img{width:100%;height:100%;object-fit:cover}.song h3{font-size:14px;margin:11px 0 4px}.song p{font-size:12px;color:var(--muted);margin:0}.song button{margin-top:11px;width:100%;border:0;border-radius:11px;padding:10px;background:#ffffff12;color:white}
+.admin{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.admin p{color:var(--muted);font-size:13px;margin:6px 0 0}.btn{background:linear-gradient(100deg,var(--pink),var(--lav));color:#24172c;border:0;border-radius:13px;padding:12px 17px;font-weight:750;cursor:pointer}.player{position:fixed;bottom:0;left:0;right:0;background:#171222ed;backdrop-filter:blur(18px);border-top:1px solid #ffffff18;padding:13px 22px;display:flex;align-items:center;gap:14px;z-index:5}.player .disc{width:43px;height:43px;border-radius:12px;background:linear-gradient(135deg,#f2acd3,#9d86d8);display:grid;place-items:center}.player .meta{min-width:0;flex:1}.player b{display:block;font-size:13px}.player small{color:var(--muted)}.player button{border:0;background:var(--lav);color:#20172a;border-radius:50%;width:42px;height:42px;font-size:17px;cursor:pointer}audio{display:none}
+footer{text-align:center;color:#786f87;font-size:11px;margin-top:35px}
+@media(max-width:700px){.wrap{padding:20px 16px 120px}.hero{grid-template-columns:1fr;margin-top:42px}.orb{height:180px;grid-row:1}.hero h1{letter-spacing:-2px}.player{gap:10px}.player small{font-size:10px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><div class="brand">Anna's <span>Song ♡</span></div><div class="pill">A little corner of music ✦</div></header>
+  <section class="hero">
+    <div><div class="eyebrow">YOUR PERSONAL MUSIC SPACE</div><h1>Every song has<br><em>a feeling.</em></h1><p>A cozy little place for songs, memories and melodies. Pick a track, press play, and stay awhile.</p></div>
+    <div class="orb" aria-hidden="true"><div class="vinyl"><i></i></div></div>
+  </section>
+  <div class="sectionhead"><h2>Made of melodies</h2><small id="count">0 songs</small></div>
+  <section id="library" class="panel">
+    <div class="empty"><div><div class="note">♫</div><strong>Your playlist is waiting</strong><p>Songs will appear here once you add them to the website's music storage.<br>For now, this is your ready-to-publish home page.</p></div></div>
+  </section>
+  <div class="sectionhead"><h2>For the music lovers</h2><small>Anna's Song ♡</small></div>
+  <section class="panel admin"><div><strong>Want to add songs later?</strong><p>Connect online storage before enabling public uploads.</p></div><button class="btn" onclick="alert('Online upload is not connected yet. GitHub Pages hosts this page, but it does not store uploaded audio. Add Supabase or another storage service to enable uploads.')">Upload setup</button></section>
+  <footer>Made with ♡ · Anna's Song</footer>
+</div>
+<div class="player"><div class="disc">♫</div><div class="meta"><b>Choose a song</b><small>Your next favourite is waiting</small></div><button aria-label="Play" onclick="alert('Add songs to the library to play them here.')">▶</button></div>
+<audio id="audio" controls></audio>
+</body></html>
