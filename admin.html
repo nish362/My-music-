@@ -1,24 +1,25 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#100b1c">
-  <title>Anna's Song · Admin</title>
+  <title>Anna's Song - Admin</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="topbar">
-  <a class="brand" href="./">anna<span>’</span>s song</a>
-  <a class="admin-link" href="./">← Public site</a>
+  <a class="brand" href="./">anna<span>’s</span> song</a>
+  <a class="admin-link" href="./">Public Site</a>
 </header>
 
 <main class="admin-shell">
 
   <section class="admin-heading">
     <p class="eyebrow">PRIVATE STUDIO</p>
-    <h1>Admin panel</h1>
+    <h1>Admin Panel</h1>
     <p class="sub">Sign in to manage the song collection.</p>
   </section>
 
@@ -29,30 +30,31 @@
       <label>
         Email
         <input id="email" type="email" required
-          autocomplete="username"
-          placeholder="Your admin email">
+          autocomplete="username" placeholder="Your admin email">
       </label>
 
       <label>
         Password
         <input id="password" type="password" required
-          autocomplete="current-password"
-          placeholder="Password">
+          autocomplete="current-password" placeholder="Password">
       </label>
 
-      <button class="primary" type="submit">Sign in</button>
+      <button class="primary" type="submit" id="login-btn">
+        Sign in
+      </button>
     </form>
 
     <p id="login-msg" class="message"></p>
   </section>
 
   <section id="dashboard" hidden>
+
     <div class="admin-bar">
       <div>
         <h2>Your songs</h2>
         <p id="admin-email" class="muted"></p>
       </div>
-      <button id="logout" class="ghost">Log out</button>
+      <button id="logout" class="ghost" type="button">Log out</button>
     </div>
 
     <section class="panel">
@@ -70,23 +72,25 @@
         <label>
           Singer / artist
           <input id="artist" maxlength="100"
-            value="Anna" placeholder="Anna">
+            value="Anna" placeholder="Artist name">
         </label>
 
         <label>
           MP3 audio file
           <input id="audio-file" type="file"
-            accept="audio/*" required>
+            accept="audio/*">
         </label>
 
         <label>
-          Cover photo <span class="muted">(optional)</span>
+          Cover photo (optional)
           <input id="cover-file" type="file"
             accept="image/*">
         </label>
 
         <div class="form-actions">
-          <button class="primary" type="submit">Upload song</button>
+          <button class="primary" type="submit" id="save-btn">
+            Upload song
+          </button>
           <button id="cancel-edit" class="ghost"
             type="button" hidden>Cancel edit</button>
         </div>
@@ -98,19 +102,309 @@
     <section class="panel">
       <h2>Manage collection</h2>
       <div id="admin-list" class="admin-list">
-        <p class="muted">Loading…</p>
+        <p class="muted">Loading...</p>
       </div>
     </section>
-  </section>
 
+  </section>
 </main>
 
-<!-- Supabase library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-
-<!-- Project configuration and admin code -->
 <script src="config.js"></script>
-<script src="admin.js"></script>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+
+  const loginCard = $('login-card');
+  const dashboard = $('dashboard');
+  const loginForm = $('login-form');
+  const loginMsg = $('login-msg');
+  const formMsg = $('form-msg');
+  const songForm = $('song-form');
+  const list = $('admin-list');
+
+  function message(element, text, error = false) {
+    element.textContent = text;
+    element.className = 'message' + (error ? ' error' : '');
+  }
+
+  // Check configuration
+  if (!window.SUPABASE_URL ||
+      !window.SUPABASE_PUBLISHABLE_KEY ||
+      !window.SONGS_BUCKET) {
+    message(loginMsg, 'Configuration missing. Check config.js.', true);
+    return;
+  }
+
+  // Check Supabase library
+  if (!window.supabase ||
+      typeof window.supabase.createClient !== 'function') {
+    message(loginMsg, 'Supabase library did not load. Refresh the page.', true);
+    return;
+  }
+
+  const db = window.supabase.createClient(
+    window.SUPABASE_URL,
+    window.SUPABASE_PUBLISHABLE_KEY
+  );
+
+  const bucket = window.SONGS_BUCKET;
+  let songs = [];
+
+  function safeName(name) {
+    return name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  }
+
+  async function uploadFile(file, folder) {
+    if (!file) return null;
+
+    const path = folder + '/' + Date.now() + '-' + safeName(file.name);
+
+    const { error } = await db.storage
+      .from(bucket)
+      .upload(path, file);
+
+    if (error) throw error;
+    return path;
+  }
+
+  async function refreshSongs() {
+    list.textContent = 'Loading songs...';
+
+    const { data, error } = await db
+      .from('songs')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      list.textContent = 'Could not load songs: ' + error.message;
+      return;
+    }
+
+    songs = data || [];
+    list.innerHTML = '';
+
+    if (!songs.length) {
+      list.textContent = 'No songs uploaded yet.';
+      return;
+    }
+
+    songs.forEach(song => {
+      const row = document.createElement('div');
+      row.className = 'admin-song';
+
+      const title = document.createElement('strong');
+      title.textContent = song.title;
+
+      const artist = document.createElement('small');
+      artist.textContent = song.artist || 'Anna';
+
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.textContent = 'Edit';
+      edit.className = 'ghost small';
+      edit.addEventListener('click', () => editSong(song));
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.textContent = 'Delete';
+      del.className = 'danger small';
+      del.addEventListener('click', () => deleteSong(song));
+
+      row.append(title, artist, edit, del);
+      list.appendChild(row);
+    });
+  }
+
+  async function showDashboard() {
+    const { data, error } = await db.auth.getUser();
+
+    if (error || !data.user) return;
+
+    loginCard.hidden = true;
+    dashboard.hidden = false;
+    $('admin-email').textContent = data.user.email || '';
+    await refreshSongs();
+  }
+
+  // LOGIN
+  loginForm.addEventListener('submit', async event => {
+    event.preventDefault();
+
+    const email = $('email').value.trim();
+    const password = $('password').value;
+
+    const button = $('login-btn');
+    button.disabled = true;
+    button.textContent = 'Signing in...';
+    message(loginMsg, 'Connecting to Supabase...');
+
+    try {
+      const { data, error } = await db.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+      if (!data.session) throw new Error('Login session was not created.');
+
+      message(loginMsg, 'Login successful!');
+      await showDashboard();
+
+    } catch (error) {
+      message(loginMsg, error.message || 'Login failed.', true);
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Sign in';
+    }
+  });
+
+  // LOGOUT
+  $('logout').addEventListener('click', async () => {
+    const { error } = await db.auth.signOut();
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    dashboard.hidden = true;
+    loginCard.hidden = false;
+    loginForm.reset();
+    message(loginMsg, 'You have logged out.');
+  });
+
+  // ADD OR UPDATE SONG
+  songForm.addEventListener('submit', async event => {
+    event.preventDefault();
+
+    const button = $('save-btn');
+    button.disabled = true;
+    button.textContent = 'Please wait...';
+
+    try {
+      const id = $('edit-id').value;
+      const oldSong = songs.find(song => song.id === id);
+
+      const audioFile = $('audio-file').files[0];
+      const coverFile = $('cover-file').files[0];
+
+      if (!id && !audioFile) {
+        throw new Error('Please select an MP3 audio file.');
+      }
+
+      message(formMsg, 'Uploading files...');
+
+      let audioPath = oldSong?.audio_path || null;
+      let coverPath = oldSong?.cover_path || null;
+
+      if (audioFile) {
+        audioPath = await uploadFile(audioFile, 'audio');
+      }
+
+      if (coverFile) {
+        coverPath = await uploadFile(coverFile, 'covers');
+      }
+
+      const songData = {
+        title: $('title').value.trim(),
+        artist: $('artist').value.trim() || 'Anna',
+        audio_path: audioPath,
+        cover_path: coverPath
+      };
+
+      let result;
+
+      if (id) {
+        result = await db.from('songs')
+          .update(songData)
+          .eq('id', id);
+      } else {
+        result = await db.from('songs').insert([songData]);
+      }
+
+      if (result.error) throw result.error;
+
+      message(formMsg, id ? 'Song updated!' : 'Song uploaded!');
+      resetSongForm();
+      await refreshSongs();
+
+    } catch (error) {
+      message(formMsg, error.message || 'Something went wrong.', true);
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Upload song';
+    }
+  });
+
+  // EDIT SONG
+  function editSong(song) {
+    $('edit-id').value = song.id;
+    $('title').value = song.title || '';
+    $('artist').value = song.artist || 'Anna';
+
+    $('form-title').textContent = 'Edit song';
+    $('save-btn').textContent = 'Save changes';
+    $('cancel-edit').hidden = false;
+
+    message(formMsg, 'Choose new files only if you want to replace them.');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetSongForm() {
+    songForm.reset();
+    $('edit-id').value = '';
+    $('form-title').textContent = 'Add a song';
+    $('save-btn').textContent = 'Upload song';
+    $('cancel-edit').hidden = true;
+  }
+
+  $('cancel-edit').addEventListener('click', resetSongForm);
+
+  // DELETE SONG
+  async function deleteSong(song) {
+    if (!confirm('Delete "' + song.title + '" permanently?')) return;
+
+    try {
+      const { error } = await db.from('songs')
+        .delete()
+        .eq('id', song.id);
+
+      if (error) throw error;
+
+      const paths = [song.audio_path, song.cover_path].filter(Boolean);
+
+      if (paths.length) {
+        const { error: storageError } = await db.storage
+          .from(bucket)
+          .remove(paths);
+
+        if (storageError) {
+          console.error('File cleanup error:', storageError.message);
+        }
+      }
+
+      message(formMsg, 'Song deleted.');
+      await refreshSongs();
+
+    } catch (error) {
+      message(formMsg, error.message || 'Delete failed.', true);
+    }
+  }
+
+  // Restore an existing login session
+  db.auth.getSession().then(({ data, error }) => {
+    if (error) {
+      message(loginMsg, error.message, true);
+      return;
+    }
+
+    if (data.session) showDashboard();
+  });
+
+})();
+</script>
 
 </body>
 </html>
