@@ -83,6 +83,22 @@
     .upload-panel p{font:13px/1.6 Arial,sans-serif;color:var(--muted);margin:7px 0 0}
     .upload-button{border:0;border-radius:24px;background:var(--wine);color:#fff8ed;padding:12px 18px;font:bold 13px Arial,sans-serif}
     footer{text-align:center;color:#9b7770;font:12px Arial,sans-serif;padding:30px 16px 38px}
+
+    .song-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .mini-action,.comment-like,.recent-chip{border:1px solid #d7a5a0;background:#fff5ef;color:#713542;border-radius:20px;padding:7px 10px;font:12px Arial,sans-serif;cursor:pointer}
+    .mini-action:hover,.comment-like:hover,.recent-chip:hover{background:#f4d9d6;transform:translateY(-1px)}
+    .comment-like{margin-top:10px}
+    .pinned-label{display:inline-block;margin-top:8px;color:#a05b43;font:11px Arial,sans-serif}
+    #song-of-day{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 clamp(18px,5vw,54px) 20px;padding:16px 20px;border-radius:20px;background:linear-gradient(120deg,#713542,#b66f70,#d49a77);color:#fff8ed;box-shadow:0 12px 28px #71354225;animation:softGlow 5s ease-in-out infinite alternate}
+    #song-of-day[hidden]{display:none}
+    #song-of-day strong{font-size:13px;letter-spacing:1px;text-transform:uppercase}
+    #song-of-day span{flex:1;font:14px Arial,sans-serif}
+    #song-of-day .play-button{background:#fff8ed;color:#713542;border:0}
+    #recent-list{display:flex;gap:8px;flex-wrap:wrap}
+    @keyframes softGlow{from{box-shadow:0 8px 22px #71354218}to{box-shadow:0 12px 32px #b66f7040}}
+    .panel,.playlist,.comments-panel,.album-card{transition:transform .25s,box-shadow .25s}
+    .panel:hover,.playlist:hover{box-shadow:0 14px 34px #71354214}
+
     @media(max-width:560px){.topbar{padding:15px 18px}.top-note{font-size:9px;letter-spacing:1.5px}.hero{padding-top:34px}.hero:after{right:-20px;font-size:95px}#player{grid-template-columns:1fr;text-align:center;border-radius:23px}#now-cover{width:min(72vw,270px);justify-self:center}.player-content{width:100%}#now-title{white-space:normal}.controls{gap:22px}.section-heading h2{font-size:23px}.song{gap:10px}.cover{width:52px;height:52px}.play-button{padding:9px 12px}}
     @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
   </style>
@@ -99,6 +115,11 @@
     <p>Soft melodies, familiar voices and moments worth keeping. Pick a song and make yourself at home.</p>
   </section>
 
+  <section id="song-of-day" hidden aria-label="Song of the day"></section>
+  <section class="section" style="padding-top:0;padding-bottom:12px">
+    <div class="section-heading"><h2>Recently played</h2><span class="count">your listening trail</span></div>
+    <div id="recent-list"></div>
+  </section>
   <section id="player" aria-label="Now playing">
     <img id="now-cover" src="cover-placeholder.svg" alt="Song cover">
     <div class="player-content">
@@ -155,6 +176,6 @@
   <footer>Made with love ♡ · Anna's Song</footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
-  <script src="app.js?v=20261112-catcover"></script>
+  <script src="app.js?v=20261112-social1"></script>
 </body>
 </html>
