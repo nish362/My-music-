@@ -68,6 +68,7 @@
 <nav class="admin-tabs">
 <button type="button" class="ghost active" data-tab="songs">Songs</button>
 <button type="button" class="ghost" data-tab="albums">Albums</button>
+<button type="button" class="ghost" data-tab="guestbook">Guestbook</button>
 </nav>
 
 <section id="songs-view">
@@ -125,6 +126,19 @@
 <section class="panel">
 <h2>Your albums</h2>
 <div id="album-list"><p class="muted">Loading albums...</p></div>
+</section>
+</section>
+<section id="guestbook-view" hidden>
+<section class="panel">
+<h2>Song of the Day</h2>
+<label>Choose featured song<select id="featured-song"></select></label>
+<button class="primary" type="button" id="save-featured">Save Song of the Day</button>
+<p id="featured-msg" class="message"></p>
+</section>
+<section class="panel">
+<h2>Guestbook comments</h2>
+<p class="muted">Pin a lovely comment to show it at the top, or remove unwanted comments.</p>
+<div id="admin-comments"></div>
 </section>
 </section>
 </section>
@@ -193,8 +207,9 @@ async function removeFiles(paths){
 }
 function setBusy(v){busy=v;document.querySelectorAll('button').forEach(b=>{if(b.id!=='logout')b.disabled=v;});}
 function switchTab(tab){
- $('songs-view').hidden=tab!=='songs';$('albums-view').hidden=tab!=='albums';
+ $('songs-view').hidden=tab!=='songs';$('albums-view').hidden=tab!=='albums';$('guestbook-view').hidden=tab!=='guestbook';
  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+ if(tab==='guestbook')loadAdminComments();
 }
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 
@@ -209,8 +224,26 @@ async function refreshAll(){
  if(l.error)throw new Error('Album setup needed: '+l.error.message+' Run albums-setup.sql in Supabase SQL Editor.');
  songs=s.data||[];albums=a.data||[];albumLinks=l.data||[];
  $('song-total').textContent=songs.length;$('album-total').textContent=albums.length;$('linked-total').textContent=albumLinks.length;
- renderSongs();renderAlbums();renderSongChecks();
+ renderSongs();renderAlbums();renderSongChecks();fillFeaturedSong();
 }
+function fillFeaturedSong(){
+ const sel=$('featured-song');if(!sel)return;
+ sel.innerHTML='<option value="">No featured song</option>';
+ songs.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.title+' — '+(s.artist||'Anna');sel.append(o);});
+ db.from('song_of_day').select('song_id').eq('id',true).maybeSingle().then(({data})=>{sel.value=data?.song_id||'';});
+}
+async function loadAdminComments(){
+ const box=$('admin-comments');if(!box)return;box.textContent='Loading comments…';
+ const {data,error}=await db.from('comments').select('id,display_name,message,created_at,is_pinned').order('is_pinned',{ascending:false}).order('created_at',{ascending:false}).limit(150);
+ box.innerHTML='';if(error){box.textContent='Could not load comments: '+error.message;return;}
+ if(!data?.length){box.textContent='No comments yet.';return;}
+ data.forEach(c=>{const row=document.createElement('div');row.className='admin-album';
+ const msg=document.createElement('p');msg.textContent=c.display_name+': '+c.message;
+ const pin=document.createElement('button');pin.className='ghost small';pin.textContent=c.is_pinned?'Unpin':'Pin';pin.onclick=async()=>{const {error}=await db.from('comments').update({is_pinned:!c.is_pinned}).eq('id',c.id);if(error)alert(error.message);else loadAdminComments();};
+ const del=document.createElement('button');del.className='danger small';del.textContent='Delete';del.onclick=async()=>{if(!confirm('Delete this comment?'))return;const {error}=await db.from('comments').delete().eq('id',c.id);if(error)alert(error.message);else loadAdminComments();};
+ row.append(msg,pin,del);box.append(row);});
+}
+$('save-featured').onclick=async()=>{const {error}=await db.from('song_of_day').upsert({id:true,song_id:$('featured-song').value||null,updated_at:new Date().toISOString()},{onConflict:'id'});say($('featured-msg'),error?error.message:'Song of the Day updated.',!!error);};
 function renderSongs(){
  const list=$('admin-list'),q=$('song-search').value.trim().toLowerCase();
  list.innerHTML='';
