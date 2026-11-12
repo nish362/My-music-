@@ -1,16 +1,29 @@
-
 (() => {
   const $ = id => document.getElementById(id);
-  const grid = $('song-grid');
+
+  const grid = $('songs-grid');
   const audio = $('audio');
+  const search = $('search');
+  const count = $('song-count');
 
-  const ok =
-    window.SUPABASE_URL?.startsWith('https://') &&
-    window.SUPABASE_PUBLISHABLE_KEY &&
-    !window.SUPABASE_PUBLISHABLE_KEY.startsWith('PASTE_');
+  function showError(message) {
+    if (grid) {
+      grid.innerHTML = `<div class="empty">${message}</div>`;
+    }
+  }
 
-  if (!ok) {
-    grid.innerHTML = '<p class="empty">Supabase setup needed. Check config.js.</p>';
+  if (!grid || !audio || !search || !count) {
+    showError('Website setup error: HTML elements are missing.');
+    return;
+  }
+
+  if (!window.supabase || !window.supabase.createClient) {
+    showError('Supabase library did not load. Please refresh the page.');
+    return;
+  }
+
+  if (!window.SUPABASE_URL || !window.SUPABASE_PUBLISHABLE_KEY) {
+    showError('Supabase configuration is missing.');
     return;
   }
 
@@ -21,82 +34,101 @@
 
   let songs = [];
 
-  const url = path =>
-    db.storage.from(window.SONGS_BUCKET).getPublicUrl(path).data.publicUrl;
+  function publicUrl(path) {
+    if (!path) return '';
+    return db.storage
+      .from(window.SONGS_BUCKET)
+      .getPublicUrl(path).data.publicUrl;
+  }
 
-  function play(song) {
-    $('player').hidden = false;
-    $('now-title').textContent = song.title;
-    $('now-artist').textContent = song.artist || 'Anna';
-    $('now-cover').src = song.cover_path
-      ? url(song.cover_path)
-      : 'cover-placeholder.svg';
+  function playSong(song) {
+    audio.src = publicUrl(song.audio_path);
+    audio.play().catch(() => {
+      showError('Play button dabakar audio chalao.');
+    });
 
-    audio.src = url(song.audio_path);
-    audio.play().catch(() => {});
-    $('player').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const player = $('player');
+    if (player) player.hidden = false;
+
+    if ($('now-title')) $('now-title').textContent = song.title;
+    if ($('now-artist')) {
+      $('now-artist').textContent = song.artist || 'Anna';
+    }
   }
 
   function render() {
-    const q = $('search').value.trim().toLowerCase();
+    const query = search.value.trim().toLowerCase();
 
-    const list = songs.filter(song =>
-      (song.title + ' ' + (song.artist || '')).toLowerCase().includes(q)
+    const filtered = songs.filter(song =>
+      `${song.title || ''} ${song.artist || ''}`
+        .toLowerCase().includes(query)
     );
 
-    $('song-count').textContent = songs.length;
+    count.textContent = `${songs.length} songs`;
 
-    if (!list.length) {
-      grid.innerHTML = '<p class="empty">No songs found yet. Check back soon ♡</p>';
+    if (!filtered.length) {
+      showError('No songs found.');
       return;
     }
 
     grid.innerHTML = '';
 
-    list.forEach(song => {
-      const card = document.createElement('article');
-      card.className = 'song-card';
+    filtered.forEach(song => {
+      const card = document.createElement('div');
+      card.className = 'song';
 
-      const img = document.createElement('img');
-      img.className = 'cover';
-      img.alt = '';
-      img.src = song.cover_path ? url(song.cover_path) : 'cover-placeholder.svg';
+      const cover = document.createElement('img');
+      cover.className = 'cover';
+      cover.alt = 'Song cover';
+      cover.src = song.cover_path
+        ? publicUrl(song.cover_path)
+        : 'cover-placeholder.svg';
 
       const info = document.createElement('div');
       info.className = 'song-info';
 
       const title = document.createElement('strong');
-      title.textContent = song.title;
+      title.textContent = song.title || 'Untitled';
 
-      const artist = document.createElement('span');
+      const artist = document.createElement('small');
       artist.textContent = song.artist || 'Anna';
 
       info.append(title, artist);
 
       const button = document.createElement('button');
-      button.className = 'play-btn';
-      button.textContent = '▶';
       button.type = 'button';
-      button.setAttribute('aria-label', 'Play ' + song.title);
-      button.onclick = () => play(song);
+      button.textContent = '▶ Play';
+      button.addEventListener('click', () => playSong(song));
 
-      card.append(img, info, button);
+      card.append(cover, info, button);
       grid.append(card);
     });
   }
 
-  $('search').addEventListener('input', render);
+  search.addEventListener('input', render);
 
-  db.from('songs')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .then(({ data, error }) => {
+  async function loadSongs() {
+    showError('Loading songs...');
+
+    try {
+      const { data, error } = await db
+        .from('songs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
       if (error) {
-        grid.innerHTML = '<p class="empty">Could not load songs. Check Supabase setup and table permissions.</p>';
+        showError('Could not load songs: ' + error.message);
         return;
       }
 
       songs = data || [];
       render();
-    });
+
+    } catch (error) {
+      showError('Connection error: ' + error.message);
+    }
+  }
+
+  loadSongs();
 })();
+
