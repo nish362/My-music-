@@ -7,7 +7,7 @@
     grid.textContent='Website connection is unavailable. Please refresh.';return;
   }
   const db=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_PUBLISHABLE_KEY);
-  let songs=[],albums=[],links=[],activeAlbum=null,currentVisible=[],playQueue=[],currentIndex=-1;
+  let songs=[],albums=[],links=[],communitySongs=[],activeAlbum=null,currentVisible=[],playQueue=[],currentIndex=-1;
   let seeking=false;
   const readList=k=>{try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(_){return []}};
   const writeList=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(_){}};
@@ -173,6 +173,24 @@
       box.append(h,name,play,share);
     });
   }
+  async function loadCommunitySongs(){
+    const box=$('community-songs-grid');if(!box)return;
+    const {data,error}=await db.from('community_songs').select('id,title,artist,cover_path,created_at').order('created_at',{ascending:false});
+    box.innerHTML='';
+    if(error){box.innerHTML='<div class="community-empty">Friends’ songs could not load right now. Please refresh later.</div>';return;}
+    communitySongs=data||[];
+    if(!communitySongs.length){box.innerHTML='<div class="community-empty">🎤 Abhi stage khaali hai!<br>Mic Drop se apna gaana record ya upload karo. Approve hote hi yahan cover, naam aur gaane ke saath dikhega. ✨</div>';return;}
+    communitySongs.forEach(song=>{
+      const card=document.createElement('article');card.className='community-card';
+      const cover=document.createElement('img');cover.className='community-cover';cover.alt=(song.title||'Song')+' cover';setSafeCover(cover,song);
+      const title=document.createElement('strong');title.textContent=song.title||'Untitled';
+      const by=document.createElement('small');by.textContent='🎙️ Added by '+(song.artist||'Friend');
+      const play=document.createElement('button');play.type='button';play.className='play-button';play.textContent='▶ Listen';
+      const fullSong=songs.find(s=>s.id===song.id);
+      play.onclick=()=>{if(fullSong)showPlaying(fullSong,communitySongs.map(x=>songs.find(s=>s.id===x.id)).filter(Boolean));};
+      card.append(cover,title,by,play);box.append(card);
+    });
+  }
   async function load(){
     grid.textContent='Loading songs…';
     const {data:s,error}=await db.from('songs').select('*').order('created_at',{ascending:false});
@@ -184,7 +202,7 @@
     ]);
     albums=a.error?[]:(a.data||[]);
     links=l.error?[]:(l.data||[]);
-    renderAlbums();renderSongs();renderRecent();renderFavorites();renderSongOfDay();updateProgress();
+    renderAlbums();renderSongs();renderRecent();renderFavorites();renderSongOfDay();updateProgress();await loadCommunitySongs();
 
   }
 
