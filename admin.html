@@ -131,6 +131,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <script src="config.js"></script>
 <script>
 (() => {
@@ -149,24 +150,40 @@ const safeFile=n=>String(n||'file').normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/
 const publicUrl=p=>p?db.storage.from(bucket).getPublicUrl(p).data.publicUrl:'';
 async function upload(file,folder){
  if(!file)return null;
- // Keep objects at the bucket root. This matches the existing files uploaded
- // from the Supabase Dashboard and avoids folder-prefix policy/path issues.
  const path=Date.now()+'-'+uid()+'-'+safeFile(file.name);
- try {
-  const {data,error}=await db.storage.from(bucket).upload(path,file,{
-   cacheControl:'3600',
-   upsert:false,
-   contentType:file.type || 'application/octet-stream'
+ // Use resumable TUS for audio: more reliable for large MP3s and mobile networks.
+ if(folder==='audio'){
+  if(!window.tus?.Upload)throw new Error('Resumable uploader did not load. Refresh the page and try again.');
+  const {data:sessionData,error:sessionError}=await db.auth.getSession();
+  if(sessionError)throw sessionError;
+  const token=sessionData.session?.access_token;
+  if(!token)throw new Error('Your admin session expired. Log out and sign in again.');
+  return await new Promise((resolve,reject)=>{
+   const uploader=new window.tus.Upload(file,{
+    endpoint:window.SUPABASE_URL+'/storage/v1/upload/resumable',
+    retryDelays:[0,3000,5000,10000,20000],
+    chunkSize:6*1024*1024,
+    uploadDataDuringCreation:true,
+    removeFingerprintOnSuccess:true,
+    headers:{authorization:'Bearer '+token, apikey:window.SUPABASE_PUBLISHABLE_KEY},
+    metadata:{
+     bucketName:bucket,
+     objectName:path,
+     contentType:file.type||'audio/mpeg',
+     cacheControl:'3600'
+    },
+    onError:error=>reject(new Error('Audio upload failed: '+(error?.message||String(error)))),
+    onSuccess:()=>resolve(path)
+   });
+   uploader.start();
   });
-  if(error)throw error;
-  return data.path||path;
- } catch(err) {
-  console.error('Supabase Storage upload diagnostic:',err);
-  if(err instanceof TypeError && /fetch/i.test(err.message||'')) {
-   throw new Error('Browser could not reach Supabase Storage (network/CORS). Please refresh and retry; if it repeats, send this message to support.');
-  }
-  throw new Error(err.message || 'Storage upload failed.');
  }
+ // Covers are usually small, so use the standard Storage upload endpoint.
+ const {data,error}=await db.storage.from(bucket).upload(path,file,{
+  cacheControl:'3600',upsert:false,contentType:file.type||'application/octet-stream'
+ });
+ if(error)throw error;
+ return data.path||path;
 }
 async function removeFiles(paths){
  const clean=[...new Set(paths.filter(Boolean))];
