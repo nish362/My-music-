@@ -90,27 +90,40 @@
       padding: 25px;
     }
     #player {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #21172b;
-      border-top: 1px solid #493451;
-      padding: 10px 15px;
-      display: flex;
+      margin: 18px 20px 8px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 104px minmax(0,1fr);
+      gap: 14px;
       align-items: center;
-      gap: 12px;
+      border: 1px solid #60416f;
+      border-radius: 20px;
+      background: linear-gradient(135deg,#382044,#21172b 70%);
+      box-shadow: 0 12px 28px #0005;
     }
     #player[hidden] { display: none; }
-    #player audio { width: 100%; }
-    #player-info { flex: 1; min-width: 0; }
+    #now-cover {
+      width: 104px;
+      height: 104px;
+      border-radius: 14px;
+      object-fit: cover;
+      background: linear-gradient(135deg,#efa4d8,#9b7ce9);
+    }
+    #player-info { min-width: 0; }
+    #player-info .eyebrow { display:block; color:#d4b8e8; font-size:11px; letter-spacing:1.3px; margin-bottom:7px; }
     #player-info strong, #player-info small {
       display: block;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    #player-info small { color: #bbaac8; margin-top: 4px; }
+    #player-info strong { font-size:18px; }
+    #player-info small { color: #c8b6d1; margin-top: 5px; }
+    #audio { grid-column:1 / -1; width:100%; height:40px; accent-color:#d9a1ef; }
+    @media (max-width:380px) {
+      #player { grid-template-columns:82px minmax(0,1fr); padding:12px; }
+      #now-cover { width:82px; height:82px; }
+    }
   </style>
 </head>
 
@@ -121,6 +134,16 @@
     <small>YOUR PERSONAL MUSIC SPACE</small>
     <h1>Every song has <span>a feeling.</span></h1>
     <p>A cozy little place for songs, memories and melodies. Pick a track, press play, and stay awhile.</p>
+  </section>
+
+  <section id="player" aria-label="Now playing">
+    <img id="now-cover" src="cover-placeholder.svg" alt="Song cover">
+    <div id="player-info">
+      <span class="eyebrow">NOW PLAYING</span>
+      <strong id="now-title">Choose a song</strong>
+      <small id="now-artist">Anna's Song</small>
+    </div>
+    <audio id="audio" controls preload="none" playsinline></audio>
   </section>
 
   <section class="section">
@@ -151,14 +174,6 @@
   </section>
 
   <footer>Made with ♡ · Anna's Song</footer>
-
-  <div id="player" hidden>
-    <div id="player-info">
-      <strong id="now-title">Choose a song</strong>
-      <small id="now-artist">Anna's Song</small>
-    </div>
-    <audio id="audio" controls preload="none"></audio>
-  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
