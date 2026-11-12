@@ -145,7 +145,7 @@
     albums=a.error?[]:(a.data||[]);
     links=l.error?[]:(l.data||[]);
     renderAlbums();renderSongs();updateProgress();
-    if(typeof fillCommentSongs==='function')fillCommentSongs();
+
   }
 
   const commentForm=$('comment-form');
@@ -203,9 +203,14 @@
       status.textContent='Your comment is posted. Thank you ♡';
       await loadComments();
     });
+    window.refreshGuestbook=loadComments;
     window.addEventListener('focus',loadComments);
     loadComments();
   }
 
-  load();
+  load().then(()=>{
+    const select=$('comment-song');
+    if(select){const selected=select.value;select.innerHTML='<option value="">General comment</option>';songs.forEach(song=>{const option=document.createElement('option');option.value=song.id;option.textContent=song.title||'Untitled';select.append(option);});select.value=selected;}
+    if(window.refreshGuestbook)window.refreshGuestbook();
+  });
 })();
