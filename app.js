@@ -39,10 +39,14 @@
   }
   function renderSongs(){
     const q=search.value.trim().toLowerCase();
+    const albumSongIds=new Set(links.map(x=>x.song_id));
     let visible=songs;
     if(activeAlbum!==null){
-      const ids=links.filter(x=>x.album_id===activeAlbum).map(x=>x.song_id);
-      visible=visible.filter(s=>ids.includes(s.id));
+      const ids=new Set(links.filter(x=>x.album_id===activeAlbum).map(x=>x.song_id));
+      visible=visible.filter(s=>ids.has(s.id));
+    }else{
+      // Keep album tracks inside their albums; do not repeat them in the main song list.
+      visible=visible.filter(s=>!albumSongIds.has(s.id));
     }
     visible=visible.filter(s=>(String(s.title||'')+' '+String(s.artist||'')).toLowerCase().includes(q));
     count.textContent=visible.length+' songs'+(activeAlbum!==null?' in album':'');
