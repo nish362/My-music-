@@ -1,180 +1,131 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#100b19">
+  <meta name="theme-color" content="#f5e7d5">
+  <meta name="description" content="Anna's Song — a little home for songs and memories.">
   <title>Anna's Song ♡</title>
-
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: #100b19;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      padding-bottom: 90px;
-    }
-    header {
-      padding: 20px;
-      background: linear-gradient(120deg,#351d42,#171020);
-      font-weight: bold;
-    }
-    .hero {
-      padding: 35px 20px;
-      background: radial-gradient(circle at top right,#54306b,#100b19 65%);
-    }
-    .hero h1 {
-      font-size: 42px;
-      max-width: 500px;
-      margin: 12px 0;
-    }
-    .hero h1 span { color: #c9a6ff; }
-    .hero p { color: #c2b4ce; line-height: 1.7; }
-    .section { padding: 20px; }
-    .section h3 { margin-top: 0; }
-    .count { float: right; color: #bda9cb; font-size: 12px; }
-    .playlist {
-      background: #21192b;
-      border: 1px solid #382a43;
-      border-radius: 18px;
-      padding: 15px;
-      min-height: 150px;
-    }
-    input {
-      width: 100%;
-      padding: 14px;
-      border-radius: 10px;
-      border: 1px solid #493752;
-      background: #120d1b;
-      color: white;
-      margin-bottom: 15px;
-      font-size: 15px;
-    }
-    .song {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 5px;
-      border-bottom: 1px solid #44354c;
-    }
-    .cover {
-      width: 55px;
-      height: 55px;
-      border-radius: 10px;
-      object-fit: cover;
-      background: linear-gradient(135deg,#efa4d8,#9b7ce9);
-    }
-    .song-info { flex: 1; min-width: 0; }
-    .song-info strong { display: block; }
-    .song-info small { color: #bbaac8; }
-    button {
-      border: 0;
-      border-radius: 30px;
-      background: linear-gradient(120deg,#ef9ed7,#b99bff);
-      color: #211329;
-      padding: 12px 17px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .empty {
-      text-align: center;
-      color: #c4b3d0;
-      padding: 30px 10px;
-    }
-    footer {
-      text-align: center;
-      color: #92839e;
-      font-size: 12px;
-      padding: 25px;
-    }
-    #player {
-      margin: 18px 20px 8px;
-      padding: 16px;
-      display: grid;
-      grid-template-columns: 104px minmax(0,1fr);
-      gap: 14px;
-      align-items: center;
-      border: 1px solid #60416f;
-      border-radius: 20px;
-      background: linear-gradient(135deg,#382044,#21172b 70%);
-      box-shadow: 0 12px 28px #0005;
-    }
-    #player[hidden] { display: none; }
-    #now-cover {
-      width: 104px;
-      height: 104px;
-      border-radius: 14px;
-      object-fit: cover;
-      background: linear-gradient(135deg,#efa4d8,#9b7ce9);
-    }
-    #player-info { min-width: 0; }
-    #player-info .eyebrow { display:block; color:#d4b8e8; font-size:11px; letter-spacing:1.3px; margin-bottom:7px; }
-    #player-info strong, #player-info small {
-      display: block;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    #player-info strong { font-size:18px; }
-    #player-info small { color: #c8b6d1; margin-top: 5px; }
-    #audio { grid-column:1 / -1; width:100%; height:40px; accent-color:#d9a1ef; }
-    @media (max-width:380px) {
-      #player { grid-template-columns:82px minmax(0,1fr); padding:12px; }
-      #now-cover { width:82px; height:82px; }
-    }
+    :root{--wine:#713542;--wine-deep:#4e2631;--rose:#b66f70;--rose-light:#dba6a0;--cream:#fff8ed;--paper:#f5e7d5;--ink:#4e3032;--muted:#8d6d68;--gold:#c99b70}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;color:var(--ink);font-family:Georgia,'Times New Roman',serif;background:linear-gradient(180deg,#f8eddf 0%,#f4e3d3 55%,#f9eee2 100%);background-image:linear-gradient(#f8eddfed,#f6e8d9f2),url('paper-pattern.svg');background-size:auto,560px auto;background-attachment:fixed;padding-bottom:40px}
+    button,input{font:inherit}
+    button{cursor:pointer}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px clamp(18px,5vw,54px);background:#fff8edcf;border-bottom:1px solid #d8b9a7;backdrop-filter:blur(12px);position:sticky;top:0;z-index:5}
+    .brand{font-size:24px;font-weight:bold;letter-spacing:.3px;color:var(--wine)}
+    .brand span{color:var(--rose)}
+    .top-note{font:12px Arial,sans-serif;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+    .hero{padding:46px clamp(20px,6vw,70px) 28px;position:relative;overflow:hidden}
+    .hero:after{content:"✿";position:absolute;right:7%;top:8px;font-size:130px;color:#b77a7130;transform:rotate(18deg);pointer-events:none}
+    .eyebrow{font:11px Arial,sans-serif;letter-spacing:2.8px;text-transform:uppercase;color:var(--rose)}
+    .hero h1{font-size:clamp(34px,7vw,62px);line-height:1.03;margin:12px 0;color:var(--wine-deep);font-weight:600;max-width:680px}
+    .hero h1 em{color:var(--rose);font-weight:normal}
+    .hero p{font:15px/1.8 Arial,sans-serif;color:var(--muted);max-width:520px;margin:12px 0 0}
+    .section{padding:20px clamp(18px,5vw,54px) 30px}
+    .section-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:0 0 16px}
+    .section-heading h2{font-size:27px;color:var(--wine-deep);font-weight:600;margin:0}
+    .count{font:12px Arial,sans-serif;color:var(--muted)}
+    .panel{background:#fff9f0d9;border:1px solid #dfc4b1;border-radius:24px;padding:18px;box-shadow:0 10px 28px #75434a0d}
+    #player{margin:0 clamp(18px,5vw,54px) 24px;padding:clamp(16px,3vw,26px);display:grid;grid-template-columns:minmax(130px,220px) minmax(0,1fr);gap:clamp(16px,3vw,28px);align-items:center;border:1px solid #cda49a;border-radius:28px;background:linear-gradient(135deg,#fff8ed 0%,#f0d8c8 100%);box-shadow:0 18px 42px #70374418;position:relative;overflow:hidden}
+    #player:before{content:"";position:absolute;inset:0;background:url('paper-pattern.svg') right center/360px auto no-repeat;opacity:.55;pointer-events:none}
+    #player[hidden]{display:none}
+    #now-cover{position:relative;z-index:1;width:100%;aspect-ratio:1;object-fit:cover;border-radius:19px;box-shadow:0 12px 24px #6a39432c;background:#f3dfca;animation:coverIn .55s ease both}
+    @keyframes coverIn{from{opacity:.55;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+    .player-content{position:relative;z-index:1;min-width:0}
+    .now-label{font:11px Arial,sans-serif;letter-spacing:2px;text-transform:uppercase;color:var(--rose);display:block;margin-bottom:9px}
+    #now-title{font-size:clamp(21px,4vw,31px);font-weight:bold;color:var(--wine-deep);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #now-artist{display:block;font:14px Arial,sans-serif;color:var(--muted);margin-top:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .progress-wrap{margin-top:22px}
+    #progress{width:100%;height:5px;accent-color:var(--wine);cursor:pointer;display:block}
+    .time-row{display:flex;justify-content:space-between;font:11px Arial,sans-serif;color:var(--muted);margin-top:7px}
+    .controls{display:flex;align-items:center;justify-content:center;gap:clamp(14px,4vw,30px);margin-top:18px}
+    .control{border:0;background:transparent;color:var(--wine);font:25px Arial,sans-serif;padding:6px;min-width:36px;transition:transform .2s,color .2s}
+    .control:hover{transform:scale(1.12);color:var(--rose)}
+    .control.main{width:58px;height:58px;border-radius:50%;background:var(--wine);color:#fff8ed;font-size:24px;box-shadow:0 7px 18px #6c35452c}
+    .control.main:hover{background:var(--wine-deep)}
+    .playlist{background:#fff9f0d9;border:1px solid #dfc4b1;border-radius:22px;padding:14px;box-shadow:0 10px 28px #75434a0d}
+    .search{width:100%;padding:14px 16px;border-radius:14px;border:1px solid #dfc4b1;background:#fffdf8;color:var(--ink);font:14px Arial,sans-serif;margin-bottom:8px;outline:none}
+    .search:focus{border-color:var(--rose);box-shadow:0 0 0 3px #b66f7020}
+    .song{display:flex;align-items:center;gap:13px;padding:12px 5px;border-bottom:1px solid #ead9ca;transition:background .2s,transform .2s;border-radius:12px}
+    .song:last-child{border-bottom:0}
+    .song:hover{background:#f7e9df;transform:translateX(3px)}
+    .cover{width:58px;height:58px;border-radius:12px;object-fit:cover;background:#f0ddca;box-shadow:0 3px 9px #693e3e16}
+    .song-info{flex:1;min-width:0}
+    .song-info strong{display:block;font: bold 15px Arial,sans-serif;color:var(--wine-deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .song-info small{display:block;font:12px Arial,sans-serif;color:var(--muted);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .play-button{border:1px solid #a9676e;background:var(--wine);color:#fff8ed;border-radius:24px;padding:10px 16px;font:bold 13px Arial,sans-serif;white-space:nowrap;transition:transform .2s,box-shadow .2s}
+    .play-button:hover{transform:translateY(-2px);box-shadow:0 6px 14px #71354230}
+    #albums-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:13px}
+    .album-card{border:1px solid #e0c5b4;border-radius:17px;background:#fffaf3;padding:10px;text-align:left;color:var(--wine);display:flex;flex-direction:column;gap:8px;transition:transform .22s,box-shadow .22s}
+    .album-card:hover{transform:translateY(-4px);box-shadow:0 10px 20px #71354218}
+    .album-card img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:#f0ddca}
+    .album-card strong{font:bold 14px Arial,sans-serif}
+    .album-card small{font:12px Arial,sans-serif;color:var(--muted)}
+    .album-card.active{outline:2px solid var(--rose);background:#f8e8df}
+    .all-songs{grid-column:1/-1;width:max-content;border:1px solid #bd8a7e;background:#f7e7dc;color:var(--wine);padding:10px 18px;border-radius:24px;font: bold 13px Arial,sans-serif}
+    .empty{text-align:center;color:var(--muted);font:14px Arial,sans-serif;padding:28px 10px}
+    .upload-panel{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+    .upload-panel p{font:13px/1.6 Arial,sans-serif;color:var(--muted);margin:7px 0 0}
+    .upload-button{border:0;border-radius:24px;background:var(--wine);color:#fff8ed;padding:12px 18px;font:bold 13px Arial,sans-serif}
+    footer{text-align:center;color:#9b7770;font:12px Arial,sans-serif;padding:30px 16px 38px}
+    @media(max-width:560px){.topbar{padding:15px 18px}.top-note{font-size:9px;letter-spacing:1.5px}.hero{padding-top:34px}.hero:after{right:-20px;font-size:95px}#player{grid-template-columns:1fr;text-align:center;border-radius:23px}#now-cover{width:min(72vw,270px);justify-self:center}.player-content{width:100%}#now-title{white-space:normal}.controls{gap:22px}.section-heading h2{font-size:23px}.song{gap:10px}.cover{width:52px;height:52px}.play-button{padding:9px 12px}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
   </style>
 </head>
-
 <body>
-  <header>Anna's Song ♡</header>
+  <header class="topbar">
+    <div class="brand">Anna's <span>Song ♡</span></div>
+    <div class="top-note">little songs · lovely memories</div>
+  </header>
 
   <section class="hero">
-    <small>YOUR PERSONAL MUSIC SPACE</small>
-    <h1>Every song has <span>a feeling.</span></h1>
-    <p>A cozy little place for songs, memories and melodies. Pick a track, press play, and stay awhile.</p>
+    <span class="eyebrow">A LITTLE MUSIC CORNER</span>
+    <h1>Every song holds <em>a memory.</em></h1>
+    <p>Soft melodies, familiar voices and moments worth keeping. Pick a song and make yourself at home.</p>
   </section>
 
   <section id="player" aria-label="Now playing">
     <img id="now-cover" src="cover-placeholder.svg" alt="Song cover">
-    <div id="player-info">
-      <span class="eyebrow">NOW PLAYING</span>
+    <div class="player-content">
+      <span class="now-label">♡ Now playing</span>
       <strong id="now-title">Choose a song</strong>
       <small id="now-artist">Anna's Song</small>
-    </div>
-    <audio id="audio" controls preload="none" playsinline></audio>
-  </section>
-
-  <section class="section">
-    <h3>Albums</h3>
-    <div id="albums-grid" class="playlist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px">
-      <div class="empty">Loading albums...</div>
-    </div>
-  </section>
-
-  <section class="section">
-    <h3>Made of melodies <span class="count" id="song-count">0 songs</span></h3>
-
-    <div class="playlist">
-      <input id="search" type="search" placeholder="Search songs or artists...">
-      <div id="songs-grid">
-        <div class="empty">Loading songs...</div>
+      <div class="progress-wrap">
+        <input id="progress" type="range" min="0" max="1000" value="0" aria-label="Song progress">
+        <div class="time-row"><span id="elapsed">0:00</span><span id="duration">0:00</span></div>
+      </div>
+      <div class="controls">
+        <button class="control" id="previous" aria-label="Previous song">|◀</button>
+        <button class="control main" id="toggle-play" aria-label="Play">▶</button>
+        <button class="control" id="next" aria-label="Next song">▶|</button>
       </div>
     </div>
+    <audio id="audio" preload="none" playsinline></audio>
   </section>
 
   <section class="section">
-    <h3>For the music lovers</h3>
+    <div class="section-heading"><h2>Albums</h2><span class="count">little collections</span></div>
+    <div id="albums-grid" class="playlist"><div class="empty">Loading albums...</div></div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading"><h2>Made of melodies</h2><span class="count" id="song-count">0 songs</span></div>
     <div class="playlist">
-      <strong>Want to add songs later?</strong>
-      <p style="color:#bbaac8">Open your private studio to upload music.</p>
-      <button onclick="location.href='admin.html'">Upload songs</button>
+      <input class="search" id="search" type="search" placeholder="Find a song or artist...">
+      <div id="songs-grid"><div class="empty">Loading songs...</div></div>
     </div>
   </section>
 
-  <footer>Made with ♡ · Anna's Song</footer>
+  <section class="section">
+    <div class="playlist upload-panel">
+      <div><strong>Have a new melody?</strong><p>Add another song to your little music corner.</p></div>
+      <button class="upload-button" onclick="location.href='admin.html'">＋ Upload songs</button>
+    </div>
+  </section>
 
+  <footer>Made with love ♡ · Anna's Song</footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
