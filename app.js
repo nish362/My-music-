@@ -11,6 +11,7 @@
   let seeking=false;
   const publicUrl=p=>p?db.storage.from(window.SONGS_BUCKET).getPublicUrl(p).data.publicUrl:'';
   const coverUrl=song=>publicUrl(song?.cover_path)||'cover-placeholder.svg';
+  const setSafeCover=(img,song)=>{img.src=coverUrl(song);img.onerror=()=>{img.onerror=null;img.src='cover-placeholder.svg';};};
   const timeText=value=>{
     if(!Number.isFinite(value))return '0:00';
     const m=Math.floor(value/60),s=Math.floor(value%60);
@@ -51,7 +52,7 @@
     currentIndex=playQueue.findIndex(item=>item.id===song.id);
     if(currentIndex<0){playQueue=[song];currentIndex=0;}
     const cover=$('now-cover');
-    if(cover){cover.src=coverUrl(song);cover.alt=(song.title||'Song')+' cover';cover.style.animation='none';void cover.offsetWidth;cover.style.animation='coverIn .55s ease both';}
+    if(cover){setSafeCover(cover,song);cover.alt=(song.title||'Song')+' cover';cover.style.animation='none';void cover.offsetWidth;cover.style.animation='coverIn .55s ease both';}
     $('now-title').textContent=song.title||'Untitled';
     $('now-artist').textContent=song.artist||'Anna';
     audio.src=publicUrl(song.audio_path);
@@ -97,7 +98,7 @@
     albumsGrid.append(all);
     albums.forEach(album=>{
       const card=document.createElement('button');card.type='button';card.className='album-card'+(activeAlbum===album.id?' active':'');
-      const img=document.createElement('img');img.src=publicUrl(album.cover_path)||'cover-placeholder.svg';img.alt=album.title+' cover';
+      const img=document.createElement('img');setSafeCover(img,album);img.alt=album.title+' cover';
       const name=document.createElement('strong');name.textContent=album.title;
       const n=links.filter(x=>x.album_id===album.id).length;
       const small=document.createElement('small');small.textContent=n+' songs';
@@ -121,7 +122,7 @@
     if(!visible.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='No songs found.';grid.append(empty);return;}
     visible.forEach(song=>{
       const card=document.createElement('div');card.className='song';
-      const cover=document.createElement('img');cover.className='cover';cover.alt='Song cover';cover.src=coverUrl(song);
+      const cover=document.createElement('img');cover.className='cover';cover.alt='Song cover';setSafeCover(cover,song);
       const info=document.createElement('div');info.className='song-info';
       const title=document.createElement('strong');title.textContent=song.title||'Untitled';
       const artist=document.createElement('small');artist.textContent=song.artist||'Anna';info.append(title,artist);
