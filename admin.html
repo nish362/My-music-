@@ -431,7 +431,7 @@ async function deleteAlbum(album){
 async function showDashboard(){
  const {data,error}=await db.auth.getUser();if(error||!data.user)return;
  loginCard.hidden=true;dashboard.hidden=false;$('admin-email').textContent=data.user.email||'';
- try{await refreshAll();}catch(err){$('admin-list').textContent=err.message;}
+ try{await refreshAll();await loadFriendSubmissions();}catch(err){$('admin-list').textContent=err.message;}
 }
 $('login-form').addEventListener('submit',async e=>{
  e.preventDefault();const b=$('login-btn');b.disabled=true;b.textContent='Signing in…';say(loginMsg,'Connecting…');
@@ -440,6 +440,8 @@ $('login-form').addEventListener('submit',async e=>{
 });
 $('logout').onclick=async()=>{await db.auth.signOut();dashboard.hidden=true;loginCard.hidden=false;$('login-form').reset();};
 db.auth.getSession().then(({data,error})=>{if(error)say(loginMsg,error.message,true);else if(data.session)showDashboard();});
+window.addEventListener('focus',()=>{if(!dashboard.hidden)loadFriendSubmissions();});
+setInterval(()=>{if(!dashboard.hidden)loadFriendSubmissions();},15000);
 })();
 </script>
 </body>
