@@ -125,11 +125,27 @@
     .mini-action:hover,.comment-like:hover,.recent-chip:hover{background:#f4d9d6;transform:translateY(-1px)}
     .comment-like{margin-top:10px}
     .pinned-label{display:inline-block;margin-top:8px;color:#a05b43;font:11px Arial,sans-serif}
-    #song-of-day{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 clamp(18px,5vw,54px) 20px;padding:16px 20px;border-radius:20px;background:linear-gradient(120deg,#713542,#b66f70,#d49a77);color:#fff8ed;box-shadow:0 12px 28px #71354225;animation:softGlow 5s ease-in-out infinite alternate}
+    #song-of-day{position:relative;isolation:isolate;display:block;overflow:hidden;min-height:390px;margin:0 clamp(18px,5vw,54px) 22px;padding:28px;border:1px solid #f3b18f;border-radius:26px;color:#fff;background:linear-gradient(180deg,#ff805d 0%,#b94e49 58%,#3b1a28 100%);box-shadow:0 16px 36px #71354230}
+    #song-of-day:before{content:"";position:absolute;z-index:-2;inset:0;background-image:linear-gradient(180deg,#4b18241a,#34131caa),url("song-of-day-bg.jpg");background-size:cover;background-position:center 48%;filter:saturate(1.05)}
+    #song-of-day:after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(180deg,#2c11101a 0%,#2c111033 38%,#260d19c9 100%)}
     #song-of-day[hidden]{display:none}
-    #song-of-day strong{font-size:13px;letter-spacing:1px;text-transform:uppercase}
-    #song-of-day span{flex:1;font:14px Arial,sans-serif}
-    #song-of-day .play-button{background:#fff8ed;color:#713542;border:0}
+    .sod-content{position:relative;max-width:560px;margin:0 auto;padding:4px 2px 0}
+    .sod-eyebrow{font:11px Arial,sans-serif;letter-spacing:2.5px;font-weight:bold;color:#fff4df;text-shadow:0 2px 8px #40151b}
+    .sod-heading{display:flex;align-items:center;gap:13px;margin:18px 0 28px}
+    .sod-cover{width:62px;height:62px;flex:0 0 62px;object-fit:cover;border-radius:12px;border:2px solid #fff8e9;box-shadow:0 5px 18px #210b1b66}
+    .sod-titles{min-width:0;text-shadow:0 2px 8px #210b1b99}
+    .sod-title{display:block;font:bold clamp(19px,4vw,25px) Arial,sans-serif;color:#fff;line-height:1.2;overflow-wrap:anywhere}
+    .sod-artist{display:block;margin-top:5px;font:13px Arial,sans-serif;color:#ffe8d7}
+    .sod-progress{display:block;width:100%;height:5px;margin:0;accent-color:#fff;cursor:pointer}
+    .sod-progress:disabled{opacity:.65;cursor:default}
+    .sod-times{display:flex;justify-content:space-between;margin-top:9px;font:12px Arial,sans-serif;color:#fff8ef;text-shadow:0 1px 5px #210b1b}
+    .sod-controls{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:23px 0 16px}
+    .sod-control{display:grid;place-items:center;width:42px;height:42px;padding:0;border:0;background:transparent;color:white;font:25px Arial,sans-serif;text-shadow:0 2px 8px #210b1b;cursor:pointer;border-radius:50%}
+    .sod-control.sod-main{width:58px;height:58px;border:2px solid #fff;border-radius:50%;font-size:27px;background:#fff2;color:#fff;backdrop-filter:blur(4px)}
+    .sod-control.active{background:#fff3;border:1px solid #fff9}
+    .sod-share{display:block;margin:0 auto;border:1px solid #fff9;border-radius:24px;padding:9px 17px;background:#fff2;color:#fff;font:12px Arial,sans-serif}
+    @media(max-width:560px){#song-of-day{min-height:340px;padding:22px 20px;border-radius:22px} .sod-heading{margin:15px 0 24px}.sod-controls{margin:20px 0 14px}.sod-control{width:36px;height:40px;font-size:22px}}
+
     #recent-list{display:flex;gap:8px;flex-wrap:wrap}
     @keyframes softGlow{from{box-shadow:0 8px 22px #71354218}to{box-shadow:0 12px 32px #b66f7040}}
     .panel,.playlist,.comments-panel,.album-card{transition:transform .25s,box-shadow .25s}
@@ -259,6 +275,6 @@
   <footer>Made with love ♡ · Anna's Song</footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
-  <script src="app.js?v=20261112-liveprogress3"></script>
+  <script src="app.js?v=20261112-songdayplayer4"></script>
 </body>
 </html>
