@@ -69,6 +69,7 @@
 <button type="button" class="ghost active" data-tab="songs">Songs</button>
 <button type="button" class="ghost" data-tab="albums">Albums</button>
 <button type="button" class="ghost" data-tab="guestbook">Guestbook</button>
+<button type="button" class="ghost" data-tab="community">Mic Drop</button>
 </nav>
 
 <section id="songs-view">
@@ -141,6 +142,10 @@
 <div id="admin-comments"></div>
 </section>
 </section>
+<section id="community-view" hidden>
+<section class="panel"><h2>Friend access requests</h2><p class="muted">Approve only people you know. Approved friends can send audio to your review queue.</p><div id="friend-requests">Loading…</div></section>
+<section class="panel"><h2>Mic Drop submissions</h2><p class="muted">Listen first, then approve to publish the song on the public site.</p><div id="friend-submissions">Loading…</div></section>
+</section>
 </section>
 </main>
 
@@ -207,9 +212,10 @@ async function removeFiles(paths){
 }
 function setBusy(v){busy=v;document.querySelectorAll('button').forEach(b=>{if(b.id!=='logout')b.disabled=v;});}
 function switchTab(tab){
- $('songs-view').hidden=tab!=='songs';$('albums-view').hidden=tab!=='albums';$('guestbook-view').hidden=tab!=='guestbook';
+ $('songs-view').hidden=tab!=='songs';$('albums-view').hidden=tab!=='albums';$('guestbook-view').hidden=tab!=='guestbook';$('community-view').hidden=tab!=='community';
  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
  if(tab==='guestbook')loadAdminComments();
+ if(tab==='community'){loadFriendRequests();loadFriendSubmissions();}
 }
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 
@@ -225,6 +231,42 @@ async function refreshAll(){
  songs=s.data||[];albums=a.data||[];albumLinks=l.data||[];
  $('song-total').textContent=songs.length;$('album-total').textContent=albums.length;$('linked-total').textContent=albumLinks.length;
  renderSongs();renderAlbums();renderSongChecks();fillFeaturedSong();
+}
+async function loadFriendRequests(){
+ const box=$('friend-requests');box.textContent='Loading…';
+ const {data,error}=await db.from('access_requests').select('user_id,email,status,created_at').order('created_at',{ascending:false});
+ box.innerHTML='';if(error){box.textContent='Could not load requests: '+error.message;return;}
+ const pending=(data||[]).filter(x=>x.status==='pending');
+ if(!pending.length){box.textContent='No pending friend requests.';return;}
+ pending.forEach(r=>{const row=document.createElement('div');row.className='admin-album';
+ const msg=document.createElement('p');msg.textContent=r.email+' · requested '+new Date(r.created_at).toLocaleDateString();
+ const yes=document.createElement('button');yes.className='primary small';yes.textContent='Approve friend';yes.onclick=async()=>{
+  yes.disabled=true;const g=await db.from('access_grants').upsert({user_id:r.user_id,email:r.email,approved_by:(await db.auth.getUser()).data.user.id},{onConflict:'user_id'});
+  if(g.error){alert(g.error.message);yes.disabled=false;return;}
+  const u=await db.from('access_requests').update({status:'approved',reviewed_at:new Date().toISOString()}).eq('user_id',r.user_id);
+  if(u.error)alert(u.error.message);loadFriendRequests();
+ };
+ const no=document.createElement('button');no.className='danger small';no.textContent='Reject';no.onclick=async()=>{if(!confirm('Reject this friend request?'))return;const u=await db.from('access_requests').update({status:'rejected',reviewed_at:new Date().toISOString()}).eq('user_id',r.user_id);if(u.error)alert(u.error.message);loadFriendRequests();};
+ row.append(msg,yes,no);box.append(row);});
+}
+async function loadFriendSubmissions(){
+ const box=$('friend-submissions');box.textContent='Loading…';
+ const {data,error}=await db.from('friend_song_submissions').select('*').eq('status','pending').order('created_at',{ascending:false});
+ box.innerHTML='';if(error){box.textContent='Could not load submissions: '+error.message;return;}
+ if(!data?.length){box.textContent='No pending songs. Your review queue is clear!';return;}
+ data.forEach(s=>{const row=document.createElement('div');row.className='admin-album';
+ const title=document.createElement('strong');title.textContent=s.title+' — '+s.artist;
+ const who=document.createElement('small');who.textContent=s.email+' · '+new Date(s.created_at).toLocaleString();
+ const player=document.createElement('audio');player.controls=true;player.preload='none';player.src=db.storage.from('friends-mic-drop').getPublicUrl(s.audio_path).data.publicUrl;player.style.width='100%';player.style.margin='10px 0';
+ const yes=document.createElement('button');yes.className='primary small';yes.textContent='Approve & publish';yes.onclick=async()=>{
+  if(!confirm('Publish "'+s.title+'" to the public songs list?'))return;yes.disabled=true;
+  const ins=await db.from('songs').insert({title:s.title,artist:s.artist,audio_path:s.audio_path,audio_bucket:'friends-mic-drop',cover_path:null}).select('id').single();
+  if(ins.error){alert(ins.error.message);yes.disabled=false;return;}
+  const upd=await db.from('friend_song_submissions').update({status:'approved',song_id:ins.data.id,reviewed_at:new Date().toISOString()}).eq('id',s.id);
+  if(upd.error)alert(upd.error.message);loadFriendSubmissions();refreshAll();
+ };
+ const no=document.createElement('button');no.className='danger small';no.textContent='Reject';no.onclick=async()=>{if(!confirm('Reject and remove this audio submission?'))return;const u=await db.from('friend_song_submissions').update({status:'rejected',reviewed_at:new Date().toISOString()}).eq('id',s.id);if(u.error){alert(u.error.message);return;}await db.storage.from('friends-mic-drop').remove([s.audio_path]);loadFriendSubmissions();};
+ row.append(title,who,player,yes,no);box.append(row);});
 }
 function fillFeaturedSong(){
  const sel=$('featured-song');if(!sel)return;
