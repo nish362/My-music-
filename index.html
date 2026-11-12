@@ -4,315 +4,156 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#100d19">
+  <meta name="theme-color" content="#100b19">
   <title>Anna's Song ♡</title>
 
   <style>
-    :root {
-      --bg: #100d19;
-      --panel: #241d35;
-      --pink: #f4a9d4;
-      --lavender: #c6adff;
-      --text: #fff5ff;
-      --muted: #a99fba;
-      --border: rgba(255,255,255,.08);
-    }
-
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
-      color: var(--text);
-      background:
-        radial-gradient(ellipse at 85% 0%, #382044 0%, transparent 42%),
-        var(--bg);
+      background: #100b19;
+      color: #fff;
       font-family: Arial, sans-serif;
-      min-height: 100vh;
+      padding-bottom: 90px;
     }
-
-    .wrap {
-      max-width: 1120px;
-      margin: auto;
-      padding: 18px 16px 120px;
-    }
-
     header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 4px 0 24px;
-    }
-
-    .brand { font-weight: bold; font-size: 17px; }
-    .brand span { color: var(--pink); }
-
-    .pill {
-      border: 1px solid var(--border);
-      border-radius: 30px;
-      padding: 8px 12px;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .hero {
-      display: grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap: 25px;
-      align-items: center;
-      margin: 22px 0 30px;
-    }
-
-    .eyebrow {
-      color: var(--pink);
-      font-size: 10px;
-      letter-spacing: 3px;
+      padding: 20px;
+      background: linear-gradient(120deg,#351d42,#171020);
       font-weight: bold;
     }
-
-    h1 {
-      font-size: clamp(36px, 7vw, 58px);
-      line-height: 1.05;
-      margin: 12px 0;
-      letter-spacing: -2px;
+    .hero {
+      padding: 35px 20px;
+      background: radial-gradient(circle at top right,#54306b,#100b19 65%);
     }
-
-    h1 span { color: var(--lavender); }
-
-    .description {
-      color: var(--muted);
-      line-height: 1.8;
-      font-size: 14px;
+    .hero h1 {
+      font-size: 42px;
       max-width: 500px;
+      margin: 12px 0;
     }
-
-    .orb {
-      min-height: 220px;
-      border-radius: 30px;
-      background: linear-gradient(135deg, #efa6d4, #a98be8 60%, #514074);
-      display: grid;
-      place-items: center;
+    .hero h1 span { color: #c9a6ff; }
+    .hero p { color: #c2b4ce; line-height: 1.7; }
+    .section { padding: 20px; }
+    .section h3 { margin-top: 0; }
+    .count { float: right; color: #bda9cb; font-size: 12px; }
+    .playlist {
+      background: #21192b;
+      border: 1px solid #382a43;
+      border-radius: 18px;
+      padding: 15px;
+      min-height: 150px;
     }
-
-    .vinyl {
-      width: 145px;
-      height: 145px;
-      border-radius: 50%;
-      background: repeating-radial-gradient(circle, #17121e 0 4px, #30253c 5px 7px);
-      border: 7px solid rgba(255,255,255,.16);
-      display: grid;
-      place-items: center;
-      box-shadow: 0 0 0 22px rgba(255,255,255,.08);
+    input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid #493752;
+      background: #120d1b;
+      color: white;
+      margin-bottom: 15px;
+      font-size: 15px;
     }
-
-    .vinyl:after {
-      content: "";
-      width: 27px;
-      height: 27px;
-      border-radius: 50%;
-      background: var(--pink);
-      border: 5px solid #fff0fa;
-    }
-
-    .section-head {
+    .song {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       gap: 12px;
-      margin: 25px 0 12px;
+      padding: 12px 5px;
+      border-bottom: 1px solid #44354c;
     }
-
-    h2 { font-size: 17px; margin: 0; }
-
-    small { color: var(--muted); }
-
-    .panel {
-      background: rgba(255,255,255,.055);
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 20px;
-    }
-
-    #search {
-      width: 100%;
-      padding: 13px 15px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: white;
-      background: #171222;
-      outline: none;
-      margin-bottom: 16px;
-      font-size: 14px;
-    }
-
-    #search:focus { border-color: var(--pink); }
-
-    #songs-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-      gap: 14px;
-    }
-
-    .song-card {
-      padding: 13px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: rgba(18,13,28,.7);
-      min-width: 0;
-    }
-
     .cover {
-      width: 100%;
-      aspect-ratio: 1;
+      width: 55px;
+      height: 55px;
+      border-radius: 10px;
       object-fit: cover;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #efa6d4, #8d73c9);
+      background: linear-gradient(135deg,#efa4d8,#9b7ce9);
     }
-
-    .song-info { margin: 12px 0; }
-    .song-info strong { display: block; margin-bottom: 5px; }
-    .song-info span { color: var(--muted); font-size: 12px; }
-
-    .play-btn, .upload-btn {
+    .song-info { flex: 1; min-width: 0; }
+    .song-info strong { display: block; }
+    .song-info small { color: #bbaac8; }
+    button {
       border: 0;
-      border-radius: 12px;
-      padding: 11px 16px;
-      color: #24152d;
-      background: linear-gradient(100deg, var(--pink), var(--lavender));
+      border-radius: 30px;
+      background: linear-gradient(120deg,#ef9ed7,#b99bff);
+      color: #211329;
+      padding: 12px 17px;
       font-weight: bold;
       cursor: pointer;
     }
-
-    .play-btn { width: 100%; }
-
     .empty {
       text-align: center;
-      color: var(--muted);
-      padding: 35px 12px;
-      line-height: 1.7;
+      color: #c4b3d0;
+      padding: 30px 10px;
     }
-
-    .empty strong { color: white; display: block; }
-
-    .admin-note {
-      margin-top: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
     footer {
       text-align: center;
-      color: #786f87;
-      font-size: 11px;
-      margin-top: 30px;
+      color: #92839e;
+      font-size: 12px;
+      padding: 25px;
     }
-
-    .player {
+    #player {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      z-index: 10;
-      background: rgba(24,17,35,.97);
-      border-top: 1px solid var(--border);
-      padding: 10px 16px;
+      background: #21172b;
+      border-top: 1px solid #493451;
+      padding: 10px 15px;
       display: flex;
       align-items: center;
       gap: 12px;
     }
-
-    .player img {
-      width: 42px;
-      height: 42px;
-      border-radius: 10px;
-      object-fit: cover;
-      background: var(--panel);
+    #player[hidden] { display: none; }
+    #player audio { width: 100%; }
+    #player-info { flex: 1; min-width: 0; }
+    #player-info strong, #player-info small {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-
-    .player-info { flex: 1; min-width: 0; }
-    .player-info strong { display: block; font-size: 12px; }
-    .player-info small { font-size: 11px; }
-
-    .player audio { display: none; }
-
-    @media (max-width: 650px) {
-      .hero { grid-template-columns: 1fr; }
-      .orb { min-height: 180px; }
-      .vinyl { width: 120px; height: 120px; }
-      h1 { font-size: 43px; }
-    }
+    #player-info small { color: #bbaac8; margin-top: 4px; }
   </style>
 </head>
 
 <body>
-  <main class="wrap">
-    <header>
-      <div class="brand">Anna's <span>Song ♡</span></div>
-      <div class="pill">A little corner of music ✦</div>
-    </header>
+  <header>Anna's Song ♡</header>
 
-    <section class="hero">
-      <div>
-        <div class="eyebrow">YOUR PERSONAL MUSIC SPACE</div>
-        <h1>Every song has<br><span>a feeling.</span></h1>
-        <p class="description">
-          A cozy little place for songs, memories and melodies.
-          Pick a track, press play, and stay awhile.
-        </p>
-      </div>
+  <section class="hero">
+    <small>YOUR PERSONAL MUSIC SPACE</small>
+    <h1>Every song has <span>a feeling.</span></h1>
+    <p>A cozy little place for songs, memories and melodies. Pick a track, press play, and stay awhile.</p>
+  </section>
 
-      <div class="orb" aria-hidden="true">
-        <div class="vinyl"></div>
-      </div>
-    </section>
+  <section class="section">
+    <h3>Made of melodies <span class="count" id="song-count">0 songs</span></h3>
 
-    <div class="section-head">
-      <h2>Made of melodies</h2>
-      <small><span id="song-count">0</span> songs</small>
-    </div>
-
-    <section class="panel">
+    <div class="playlist">
       <input id="search" type="search" placeholder="Search songs or artists...">
-
       <div id="songs-grid">
-        <div class="empty">
-          <strong>♫</strong>
-          Loading songs...
-        </div>
+        <div class="empty">Loading songs...</div>
       </div>
-    </section>
-
-    <div class="section-head">
-      <h2>For the music lovers</h2>
-      <small>Anna's Song ♡</small>
     </div>
+  </section>
 
-    <section class="panel admin-note">
-      <div>
-        <strong>Want to add songs later?</strong>
-        <br>
-        <small>Open your private studio to upload music.</small>
-      </div>
-      <a href="admin.html">
-        <button class="upload-btn" type="button">Upload songs</button>
-      </a>
-    </section>
+  <section class="section">
+    <h3>For the music lovers</h3>
+    <div class="playlist">
+      <strong>Want to add songs later?</strong>
+      <p style="color:#bbaac8">Open your private studio to upload music.</p>
+      <button onclick="location.href='admin.html'">Upload songs</button>
+    </div>
+  </section>
 
-    <footer>Made with ♡ · Anna's Song</footer>
-  </main>
+  <footer>Made with ♡ · Anna's Song</footer>
 
-  <div class="player" id="player" hidden>
-    <img id="now-cover" src="cover-placeholder.svg" alt="Album cover">
-    <div class="player-info">
+  <div id="player" hidden>
+    <div id="player-info">
       <strong id="now-title">Choose a song</strong>
-      <small id="now-artist">Your next favourite is waiting</small>
+      <small id="now-artist">Anna's Song</small>
     </div>
-    <audio id="audio" controls></audio>
+    <audio id="audio" controls preload="none"></audio>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
