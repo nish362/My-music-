@@ -147,6 +147,13 @@
       .song .song-actions{grid-area:actions;display:flex;flex-wrap:nowrap;gap:5px;min-width:0}
       .song .mini-action{padding:8px 7px;font-size:11px;white-space:nowrap;flex:1 1 0;min-width:0}
     }
+    .song-progress-wrap{grid-column:1/-1;width:100%;padding:0 3px 2px;display:grid;gap:3px}
+    .song-progress{width:100%;height:5px;margin:0;accent-color:var(--wine);cursor:pointer;display:block}
+    .song-progress:disabled{opacity:.38;cursor:default}
+    .song-times{display:flex;justify-content:space-between;font:10px Arial,sans-serif;color:var(--muted);line-height:1.2}
+    .song.is-playing{background:#f7e9df}
+    .song.is-playing .song-play{background:var(--wine-deep);box-shadow:0 4px 12px #71354230}
+    .song.is-playing .song-progress{accent-color:var(--rose)}
     @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
   </style>
 </head>
@@ -252,6 +259,6 @@
   <footer>Made with love ♡ · Anna's Song</footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
-  <script src="app.js?v=20261112-songrow2"></script>
+  <script src="app.js?v=20261112-liveprogress3"></script>
 </body>
 </html>
