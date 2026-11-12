@@ -8,7 +8,7 @@
   }
   const db=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_PUBLISHABLE_KEY);
   let songs=[],albums=[],links=[],communitySongs=[],activeAlbum=null,currentVisible=[],playQueue=[],currentIndex=-1,currentSongId=null;
-  let seeking=false;
+  let seeking=false,shuffleEnabled=false,repeatEnabled=false;
   const readList=k=>{try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(_){return []}};
   const writeList=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(_){}};
   let favorites=readList('anna-favorites'),recent=readList('anna-recent');
@@ -99,7 +99,9 @@
   }
   function playNext(){
     if(!playQueue.length)return;
-    const next=(currentIndex+1)%playQueue.length;
+    let next;
+    if(shuffleEnabled&&playQueue.length>1){do{next=Math.floor(Math.random()*playQueue.length);}while(next===currentIndex);}
+    else next=(currentIndex+1)%playQueue.length;
     showPlaying(playQueue[next],playQueue);
   }
   function playPrevious(){
@@ -124,7 +126,7 @@
   audio.addEventListener('durationchange',()=>{updateProgress();updateSongRows();});
   audio.addEventListener('play',updatePlayButton);
   audio.addEventListener('pause',updatePlayButton);
-  audio.addEventListener('ended',playNext);
+  audio.addEventListener('ended',()=>{if(repeatEnabled){audio.currentTime=0;audio.play().catch(()=>{});}else playNext();});
 
   function renderAlbums(){
     if(!albumsGrid)return;
@@ -200,11 +202,49 @@
     db.from('song_of_day').select('song_id').eq('id',true).maybeSingle().then(({data})=>{
       const song=songs.find(s=>s.id===data?.song_id);if(!song){box.hidden=true;return;}
       box.hidden=false;box.innerHTML='';
-      const h=document.createElement('strong');h.textContent='✦ Song of the Day';
-      const name=document.createElement('span');name.textContent=song.title+' — '+(song.artist||'Anna');
-      const play=document.createElement('button');play.className='play-button';play.textContent='▶ Listen';play.onclick=()=>showPlaying(song,[song]);
-      const share=document.createElement('button');share.className='mini-action';share.textContent='↗ Share';share.onclick=()=>{const u=new URL(location.href);u.searchParams.set('song',song.id);navigator.clipboard?.writeText(u.href).then(()=>share.textContent='Copied!').catch(()=>{});};
-      box.append(h,name,play,share);
+      const content=document.createElement('div');content.className='sod-content';
+      const eyebrow=document.createElement('div');eyebrow.className='sod-eyebrow';eyebrow.textContent='✦ SONG OF THE DAY';
+      const heading=document.createElement('div');heading.className='sod-heading';
+      const cover=document.createElement('img');cover.className='sod-cover';cover.alt=(song.title||'Song')+' cover';setSafeCover(cover,song);
+      const titles=document.createElement('div');titles.className='sod-titles';
+      const name=document.createElement('strong');name.className='sod-title';name.textContent=song.title||'Untitled';
+      const artist=document.createElement('span');artist.className='sod-artist';artist.textContent=song.artist||'Anna';
+      titles.append(name,artist);heading.append(cover,titles);
+      const progress=document.createElement('input');progress.type='range';progress.min='0';progress.max='1000';progress.value='0';progress.className='sod-progress';progress.setAttribute('aria-label','Song of the day progress');
+      const times=document.createElement('div');times.className='sod-times';
+      const elapsed=document.createElement('span');elapsed.textContent='0:00';
+      const duration=document.createElement('span');duration.textContent='0:00';
+      times.append(elapsed,duration);
+      const controls=document.createElement('div');controls.className='sod-controls';
+      const shuffle=document.createElement('button');shuffle.type='button';shuffle.className='sod-control sod-toggle';shuffle.textContent='⤨';shuffle.setAttribute('aria-label','Shuffle');
+      const previous=document.createElement('button');previous.type='button';previous.className='sod-control';previous.textContent='|◀';previous.setAttribute('aria-label','Previous song');
+      const toggle=document.createElement('button');toggle.type='button';toggle.className='sod-control sod-main';toggle.textContent=currentSongId===song.id&&!audio.paused?'Ⅱ':'▶';toggle.setAttribute('aria-label','Play or pause');
+      const next=document.createElement('button');next.type='button';next.className='sod-control';next.textContent='▶|';next.setAttribute('aria-label','Next song');
+      const repeat=document.createElement('button');repeat.type='button';repeat.className='sod-control sod-toggle';repeat.textContent='↻';repeat.setAttribute('aria-label','Repeat song');
+      controls.append(shuffle,previous,toggle,next,repeat);
+      const share=document.createElement('button');share.type='button';share.className='sod-share';share.textContent='↗ Share song';
+      const sync=()=>{
+        const active=currentSongId===song.id;
+        const valid=active&&Number.isFinite(audio.duration)&&audio.duration>0;
+        progress.disabled=!valid;
+        if(valid)progress.value=String(Math.round(audio.currentTime/audio.duration*1000));
+        elapsed.textContent=active?timeText(audio.currentTime):'0:00';
+        duration.textContent=active?timeText(audio.duration):'0:00';
+        toggle.textContent=active&&!audio.paused?'Ⅱ':'▶';
+        shuffle.classList.toggle('active',shuffleEnabled);
+        repeat.classList.toggle('active',repeatEnabled);
+      };
+      progress.addEventListener('input',()=>{if(currentSongId===song.id&&Number.isFinite(audio.duration)&&audio.duration>0)audio.currentTime=Number(progress.value)/1000*audio.duration;});
+      toggle.onclick=()=>{if(currentSongId===song.id){if(audio.paused)audio.play().catch(()=>{});else audio.pause();}else showPlaying(song,[song]);};
+      previous.onclick=()=>{if(currentSongId!==song.id)showPlaying(song,[song]);else playPrevious();};
+      next.onclick=()=>{if(currentSongId!==song.id)showPlaying(song,[song]);else playNext();};
+      shuffle.onclick=()=>{shuffleEnabled=!shuffleEnabled;sync();};
+      repeat.onclick=()=>{repeatEnabled=!repeatEnabled;sync();};
+      share.onclick=async()=>{const u=new URL(location.href);u.searchParams.set('song',song.id);try{if(navigator.share)await navigator.share({title:song.title,text:"Listen to "+song.title+" on Anna's Song",url:u.href});else{await navigator.clipboard.writeText(u.href);share.textContent='✓ Copied';}}catch(_){}};
+      content.append(eyebrow,heading,progress,times,controls,share);box.append(content);
+      const syncEvents=['timeupdate','loadedmetadata','durationchange','play','pause'];
+      syncEvents.forEach(event=>audio.addEventListener(event,sync));
+      sync();
     });
   }
   async function loadCommunitySongs(){
