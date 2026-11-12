@@ -119,7 +119,7 @@
     if(Number.isFinite(audio.duration)&&audio.duration>0)audio.currentTime=(Number(e.target.value)/1000)*audio.duration;
     seeking=false;updateProgress();
   });
-  audio.addEventListener('timeupdate',updateProgress);
+  audio.addEventListener('timeupdate',()=>{updateProgress();updateSongRows();});
   audio.addEventListener('loadedmetadata',()=>{updateProgress();updateSongRows();});
   audio.addEventListener('durationchange',()=>{updateProgress();updateSongRows();});
   audio.addEventListener('play',updatePlayButton);
