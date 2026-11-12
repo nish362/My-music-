@@ -257,13 +257,17 @@ async function loadFriendSubmissions(){
  data.forEach(s=>{const row=document.createElement('div');row.className='admin-album';
  const title=document.createElement('strong');title.textContent=s.title+' — '+s.artist;
  const who=document.createElement('small');who.textContent=s.email+' · '+new Date(s.created_at).toLocaleString();
- const player=document.createElement('audio');player.controls=true;player.preload='none';player.src=db.storage.from('friends-mic-drop').getPublicUrl(s.audio_path).data.publicUrl;player.style.width='100%';player.style.margin='10px 0';
+ const player=document.createElement('audio');player.controls=true;player.preload='none';player.style.width='100%';player.style.margin='10px 0';db.storage.from('friends-mic-drop').createSignedUrl(s.audio_path,3600).then(({data,error})=>{if(data?.signedUrl)player.src=data.signedUrl;else player.title=error?.message||'Preview unavailable';});
  const yes=document.createElement('button');yes.className='primary small';yes.textContent='Approve & publish';yes.onclick=async()=>{
   if(!confirm('Publish "'+s.title+'" to the public songs list?'))return;yes.disabled=true;
-  const ins=await db.from('songs').insert({title:s.title,artist:s.artist,audio_path:s.audio_path,audio_bucket:'friends-mic-drop',cover_path:null}).select('id').single();
-  if(ins.error){alert(ins.error.message);yes.disabled=false;return;}
+  const dl=await db.storage.from('friends-mic-drop').download(s.audio_path);if(dl.error){alert(dl.error.message);yes.disabled=false;return;}
+  const ext=(s.audio_path.split('.').pop()||'mp3').replace(/[^a-z0-9]/gi,'').toLowerCase();const publicPath='community/'+crypto.randomUUID()+'.'+ext;
+  const up=await db.storage.from(window.SONGS_BUCKET).upload(publicPath,dl.data,{contentType:dl.data.type||'audio/mpeg',upsert:false});if(up.error){alert(up.error.message);yes.disabled=false;return;}
+  const ins=await db.from('songs').insert({title:s.title,artist:s.artist,audio_path:publicPath,cover_path:null}).select('id').single();
+  if(ins.error){await db.storage.from(window.SONGS_BUCKET).remove([publicPath]);alert(ins.error.message);yes.disabled=false;return;}
   const upd=await db.from('friend_song_submissions').update({status:'approved',song_id:ins.data.id,reviewed_at:new Date().toISOString()}).eq('id',s.id);
-  if(upd.error)alert(upd.error.message);loadFriendSubmissions();refreshAll();
+  if(upd.error){await db.from('songs').delete().eq('id',ins.data.id);await db.storage.from(window.SONGS_BUCKET).remove([publicPath]);alert(upd.error.message);yes.disabled=false;return;}
+  await db.storage.from('friends-mic-drop').remove([s.audio_path]);loadFriendSubmissions();refreshAll();
  };
  const no=document.createElement('button');no.className='danger small';no.textContent='Reject';no.onclick=async()=>{if(!confirm('Reject and remove this audio submission?'))return;const u=await db.from('friend_song_submissions').update({status:'rejected',reviewed_at:new Date().toISOString()}).eq('id',s.id);if(u.error){alert(u.error.message);return;}await db.storage.from('friends-mic-drop').remove([s.audio_path]);loadFriendSubmissions();};
  row.append(title,who,player,yes,no);box.append(row);});
