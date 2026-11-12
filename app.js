@@ -7,7 +7,7 @@
     grid.textContent='Website connection is unavailable. Please refresh.';return;
   }
   const db=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_PUBLISHABLE_KEY);
-  let songs=[],albums=[],links=[],communitySongs=[],activeAlbum=null,currentVisible=[],playQueue=[],currentIndex=-1;
+  let songs=[],albums=[],links=[],communitySongs=[],activeAlbum=null,currentVisible=[],playQueue=[],currentIndex=-1,currentSongId=null;
   let seeking=false;
   const readList=k=>{try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(_){return []}};
   const writeList=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(_){}};
@@ -26,6 +26,25 @@
   function updatePlayButton(){
     const btn=$('toggle-play');
     if(btn){btn.textContent=audio.paused?'▶':'Ⅱ';btn.setAttribute('aria-label',audio.paused?'Play':'Pause');}
+    updateSongRows();
+  }
+  function updateSongRows(){
+    document.querySelectorAll('.song[data-song-id]').forEach(card=>{
+      const isCurrent=card.dataset.songId===currentSongId;
+      const button=card.querySelector('.song-play');
+      const range=card.querySelector('.song-progress');
+      const elapsed=card.querySelector('.song-elapsed');
+      const duration=card.querySelector('.song-duration');
+      if(button){button.textContent=isCurrent&&!audio.paused?'Ⅱ Pause':(isCurrent?'▶ Resume':'▶ Play');button.setAttribute('aria-label',isCurrent&&!audio.paused?'Pause song':'Play song');}
+      if(range){
+        const valid=isCurrent&&Number.isFinite(audio.duration)&&audio.duration>0;
+        range.value=valid?String(Math.round(audio.currentTime/audio.duration*1000)):'0';
+        range.disabled=!valid;
+      }
+      if(elapsed)elapsed.textContent=isCurrent?timeText(audio.currentTime):'0:00';
+      if(duration)duration.textContent=isCurrent?timeText(audio.duration):'0:00';
+      card.classList.toggle('is-playing',isCurrent&&!audio.paused);
+    });
   }
   function updateProgress(){
     const slider=$('progress');
@@ -59,6 +78,11 @@
     renderRecent();
   }
   function showPlaying(song,queue=currentVisible){
+    if(currentSongId===song.id&&audio.src){
+      if(audio.paused)audio.play().catch(()=>{});else audio.pause();
+      return;
+    }
+    currentSongId=song.id;
     playQueue=queue.length?queue:[song];
     currentIndex=playQueue.findIndex(item=>item.id===song.id);
     if(currentIndex<0){playQueue=[song];currentIndex=0;}
@@ -67,6 +91,7 @@
     $('now-title').textContent=song.title||'Untitled';
     $('now-artist').textContent=song.artist||'Anna';
     audio.src=publicUrl(song.audio_path,song.audio_bucket);
+    updateSongRows();
     rememberPlay(song);
     audio.load();
     updateMediaSession(song);
@@ -95,8 +120,8 @@
     seeking=false;updateProgress();
   });
   audio.addEventListener('timeupdate',updateProgress);
-  audio.addEventListener('loadedmetadata',updateProgress);
-  audio.addEventListener('durationchange',updateProgress);
+  audio.addEventListener('loadedmetadata',()=>{updateProgress();updateSongRows();});
+  audio.addEventListener('durationchange',()=>{updateProgress();updateSongRows();});
   audio.addEventListener('play',updatePlayButton);
   audio.addEventListener('pause',updatePlayButton);
   audio.addEventListener('ended',playNext);
@@ -138,15 +163,24 @@
       const info=document.createElement('div');info.className='song-info';
       const title=document.createElement('strong');title.textContent=song.title||'Untitled';
       const artist=document.createElement('small');artist.textContent=song.artist||'Anna';info.append(title,artist);
-      const btn=document.createElement('button');btn.type='button';btn.className='play-button';btn.textContent='▶ Play';
+      card.dataset.songId=song.id;
+      const btn=document.createElement('button');btn.type='button';btn.className='play-button song-play';btn.textContent='▶ Play';
       btn.addEventListener('click',()=>showPlaying(song,currentVisible));
       const actions=document.createElement('div');actions.className='song-actions';
       const fav=document.createElement('button');fav.type='button';fav.className='mini-action';fav.textContent=favorites.includes(song.id)?'♥ Saved':'♡ Save';fav.setAttribute('aria-label','Save favourite');
       fav.onclick=()=>{favorites=favorites.includes(song.id)?favorites.filter(id=>id!==song.id):[song.id,...favorites];writeList('anna-favorites',favorites);fav.textContent=favorites.includes(song.id)?'♥ Saved':'♡ Save';renderFavorites();};
       const share=document.createElement('button');share.type='button';share.className='mini-action';share.textContent='↗ Share';
       share.onclick=async()=>{const url=new URL(location.href);url.searchParams.set('song',song.id);try{if(navigator.share)await navigator.share({title:song.title,text:"Listen to "+song.title+" on Anna's Song",url:url.href});else{await navigator.clipboard.writeText(url.href);share.textContent='Copied!';}}catch(_){}};
-      actions.append(fav,share);card.append(cover,info,btn,actions);grid.append(card);
+      const progressBox=document.createElement('div');progressBox.className='song-progress-wrap';
+      const miniRange=document.createElement('input');miniRange.type='range';miniRange.min='0';miniRange.max='1000';miniRange.value='0';miniRange.disabled=true;miniRange.className='song-progress';miniRange.setAttribute('aria-label','Song progress');
+      miniRange.addEventListener('input',()=>{if(currentSongId===song.id&&Number.isFinite(audio.duration)&&audio.duration>0)audio.currentTime=Number(miniRange.value)/1000*audio.duration;});
+      const times=document.createElement('div');times.className='song-times';
+      const elapsed=document.createElement('span');elapsed.className='song-elapsed';elapsed.textContent='0:00';
+      const duration=document.createElement('span');duration.className='song-duration';duration.textContent='0:00';
+      times.append(elapsed,duration);progressBox.append(miniRange,times);
+      actions.append(fav,share);card.append(cover,info,btn,actions,progressBox);grid.append(card);
     });
+    updateSongRows();
   }
   search.addEventListener('input',renderSongs);
   function renderFavorites(){
