@@ -1,24 +1,21 @@
+
 (() => {
   const $ = id => document.getElementById(id);
 
-  const loginMsg = $('login-msg');
-
-  function showMessage(id, message, error = false) {
+  function message(id, text, error = false) {
     const el = $(id);
     if (!el) return;
-    el.textContent = message;
+    el.textContent = text;
     el.className = 'message' + (error ? ' error' : '');
   }
 
-  // Check Supabase configuration
   if (!window.SUPABASE_URL || !window.SUPABASE_PUBLISHABLE_KEY) {
-    showMessage('login-msg', 'Supabase configuration missing.', true);
+    message('login-msg', 'Supabase configuration missing.', true);
     return;
   }
 
-  // Check Supabase library
   if (!window.supabase || !window.supabase.createClient) {
-    showMessage('login-msg', 'Supabase library did not load. Refresh the page.', true);
+    message('login-msg', 'Supabase library did not load. Refresh.', true);
     return;
   }
 
@@ -29,6 +26,12 @@
 
   const bucket = window.SONGS_BUCKET;
   let songs = [];
+
+  function safeName(name) {
+    return name.toLowerCase()
+      .replace(/[^a-z0-9.-]+/g, '-')
+      .slice(0, 80) || 'file';
+  }
 
   async function refresh() {
     const { data, error } = await db
@@ -42,10 +45,11 @@
     }
 
     songs = data || [];
-    $('admin-list').innerHTML = '';
+    const list = $('admin-list');
+    list.innerHTML = '';
 
     if (!songs.length) {
-      $('admin-list').textContent = 'No songs uploaded yet.';
+      list.textContent = 'No songs uploaded yet.';
       return;
     }
 
@@ -70,13 +74,12 @@
       del.onclick = () => deleteSong(song);
 
       row.append(title, artist, edit, del);
-      $('admin-list').append(row);
+      list.append(row);
     });
   }
 
   async function dashboard() {
     const { data, error } = await db.auth.getUser();
-
     if (error || !data.user) return;
 
     $('login-card').hidden = true;
@@ -89,32 +92,21 @@
   $('login-form').addEventListener('submit', async event => {
     event.preventDefault();
 
-    const email = $('email').value.trim();
-    const password = $('password').value;
-
-    showMessage('login-msg', 'Signing in…');
+    message('login-msg', 'Signing in…');
 
     try {
       const { data, error } = await db.auth.signInWithPassword({
-        email,
-        password
+        email: $('email').value.trim(),
+        password: $('password').value
       });
 
       if (error) throw error;
+      if (!data.session) throw new Error('Login session was not created.');
 
-      if (!data.session) {
-        throw new Error('Login session was not created.');
-      }
-
-      showMessage('login-msg', 'Login successful!');
       await dashboard();
-
+      message('login-msg', 'Login successful!');
     } catch (error) {
-      showMessage(
-        'login-msg',
-        error.message || 'Login failed. Please try again.',
-        true
-      );
+      message('login-msg', error.message || 'Login failed.', true);
     }
   });
 
@@ -132,7 +124,7 @@
     $('form-title').textContent = 'Add a song';
     $('song-form').querySelector('.primary').textContent = 'Upload song';
     $('cancel-edit').hidden = true;
-    showMessage('form-msg', '');
+    message('form-msg', '');
   }
 
   $('cancel-edit').onclick = resetForm;
@@ -148,62 +140,98 @@
     $('song-form').scrollIntoView({ behavior: 'smooth' });
   }
 
+  async function uploadFile(file, folder) {
+    const extension = safeName(file.name);
+    const path = folder + '/' + crypto.randomUUID() + '-' + extension;
+
+    const contentType = file.type ||
+      (folder === 'audio' ? 'audio/mpeg' : 'image/jpeg');
+
+    const { data, error } = await db.storage
+      .from(bucket)
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType
+      });
+
+    if (error) {
+      console.error('Storage upload error:', error);
+      throw new Error(
+        'Storage upload failed: ' +
+        (error.message || JSON.stringify(error))
+      );
+    }
+
+    return data.path;
+  }
+
   async function deleteSong(song) {
     if (!confirm('Delete "' + song.title + '"?')) return;
 
     try {
       const paths = [song.audio_path, song.cover_path].filter(Boolean);
 
-      const { error: fileError } = await db.storage
-        .from(bucket).remove(paths);
+      if (paths.length) {
+        const { error } = await db.storage.from(bucket).remove(paths);
+        if (error) throw error;
+      }
 
-      if (fileError) throw fileError;
+      const { error } = await db
+        .from('songs')
+        .delete()
+        .eq('id', song.id);
 
-      const { error } = await db.from('songs').delete().eq('id', song.id);
       if (error) throw error;
 
       await refresh();
-      showMessage('form-msg', 'Song deleted.');
-
+      message('form-msg', 'Song deleted!');
     } catch (error) {
-      showMessage('form-msg', error.message, true);
+      message('form-msg', error.message, true);
     }
-  }
-
-  function safeName(name) {
-    return name.toLowerCase()
-      .replace(/[^a-z0-9.-]+/g, '-')
-      .slice(0, 90) || 'file';
   }
 
   $('song-form').addEventListener('submit', async event => {
     event.preventDefault();
-    showMessage('form-msg', 'Uploading…');
 
+    const button = $('song-form').querySelector('.primary');
+    button.disabled = true;
+    message('form-msg', 'Uploading… Please wait.');
+
+    let audioPath = '';
+    let coverPath = null;
     const id = $('edit-id').value || crypto.randomUUID();
     const old = songs.find(song => song.id === id);
     const audio = $('audio-file').files[0];
     const cover = $('cover-file').files[0];
 
-    let audioPath = old?.audio_path || '';
-    let coverPath = old?.cover_path || null;
-
     try {
-      async function upload(file, kind) {
-        const path = id + '/' + kind + '-' + Date.now() + '-' + safeName(file.name);
+      if (!bucket) throw new Error('Bucket name is missing in config.js.');
 
-        const { error } = await db.storage.from(bucket).upload(path, file, {
-          upsert: false,
-          contentType: file.type || undefined
-        });
+      const { data: sessionData, error: sessionError } =
+        await db.auth.getSession();
 
-        if (error) throw error;
-        return path;
+      if (sessionError) throw sessionError;
+      if (!sessionData.session) {
+        throw new Error('Please log in again.');
       }
 
-      if (audio) audioPath = await upload(audio, 'audio');
-      if (!old && !audio) throw new Error('Choose an audio file.');
-      if (cover) coverPath = await upload(cover, 'cover');
+      if (!old && !audio) {
+        throw new Error('Please choose an MP3 file.');
+      }
+
+      audioPath = old ? old.audio_path : '';
+      coverPath = old ? old.cover_path : null;
+
+      if (audio) {
+        message('form-msg', 'Uploading audio file…');
+        audioPath = await uploadFile(audio, 'audio');
+      }
+
+      if (cover) {
+        message('form-msg', 'Uploading cover photo…');
+        coverPath = await uploadFile(cover, 'covers');
+      }
 
       const payload = {
         title: $('title').value.trim(),
@@ -211,6 +239,10 @@
         audio_path: audioPath,
         cover_path: coverPath
       };
+
+      if (!payload.title) throw new Error('Enter a song title.');
+
+      message('form-msg', 'Saving song details…');
 
       const result = old
         ? await db.from('songs').update(payload).eq('id', id)
@@ -220,10 +252,17 @@
 
       resetForm();
       await refresh();
-      showMessage('form-msg', old ? 'Changes saved!' : 'Song uploaded!');
+      message('form-msg', old ? 'Changes saved!' : 'Song uploaded successfully!');
 
     } catch (error) {
-      showMessage('form-msg', error.message || 'Upload failed.', true);
+      console.error('Song upload failed:', error);
+      message(
+        'form-msg',
+        error.message || 'Upload failed. Please try again.',
+        true
+      );
+    } finally {
+      button.disabled = false;
     }
   });
 
@@ -233,7 +272,6 @@
       if (data.session) dashboard();
     })
     .catch(error => {
-      showMessage('login-msg', error.message, true);
+      message('login-msg', error.message, true);
     });
-
 })();
