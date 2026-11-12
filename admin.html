@@ -214,7 +214,7 @@ function switchTab(tab){
  $('songs-view').hidden=tab!=='songs';$('albums-view').hidden=tab!=='albums';$('guestbook-view').hidden=tab!=='guestbook';$('community-view').hidden=tab!=='community';
  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
  if(tab==='guestbook')loadAdminComments();
- if(tab==='community'){loadFriendRequests();loadFriendSubmissions();}
+ if(tab==='community'){loadFriendSubmissions();}
 }
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 
