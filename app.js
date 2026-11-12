@@ -236,8 +236,8 @@
       };
       progress.addEventListener('input',()=>{if(currentSongId===song.id&&Number.isFinite(audio.duration)&&audio.duration>0)audio.currentTime=Number(progress.value)/1000*audio.duration;});
       toggle.onclick=()=>{if(currentSongId===song.id){if(audio.paused)audio.play().catch(()=>{});else audio.pause();}else showPlaying(song,[song]);};
-      previous.onclick=()=>{if(currentSongId!==song.id)showPlaying(song,[song]);else playPrevious();};
-      next.onclick=()=>{if(currentSongId!==song.id)showPlaying(song,[song]);else playNext();};
+      previous.onclick=()=>{if(currentSongId!==song.id)showPlaying(song,songs);else playPrevious();};
+      next.onclick=()=>{if(currentSongId!==song.id)showPlaying(song,songs);else playNext();};
       shuffle.onclick=()=>{shuffleEnabled=!shuffleEnabled;sync();};
       repeat.onclick=()=>{repeatEnabled=!repeatEnabled;sync();};
       share.onclick=async()=>{const u=new URL(location.href);u.searchParams.set('song',song.id);try{if(navigator.share)await navigator.share({title:song.title,text:"Listen to "+song.title+" on Anna's Song",url:u.href});else{await navigator.clipboard.writeText(u.href);share.textContent='✓ Copied';}}catch(_){}};
