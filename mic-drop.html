@@ -36,17 +36,26 @@ $('submit-song').onclick=async()=>{
  if(!title||!file){say('Song title aur recording/audio file dono chahiye.');return;}
  if(file.size>50*1024*1024){say('File 50 MB se chhoti rakho.');return;}
  const coverFile=$('cover-file').files[0];if(coverFile&&(!['image/jpeg','image/png','image/webp'].includes(coverFile.type)||coverFile.size>5*1024*1024)){say('Cover JPG, PNG ya WebP ho aur 5 MB se chhoti ho.');return;}
- const btn=$('submit-song');btn.disabled=true;say('Uploading… thoda sa patience 🎶');
+ const btn=$('submit-song');btn.disabled=true;say('Step 1/3: Audio upload ho raha hai… 🎵');
  let audioPath=null,coverPath=null;
+ const uploadFile=(path,blob,contentType)=>new Promise((resolve,reject)=>{
+  const xhr=new XMLHttpRequest();xhr.open('POST',window.SUPABASE_URL+'/storage/v1/object/friends-mic-drop/'+path.split('/').map(encodeURIComponent).join('/'));
+  xhr.setRequestHeader('apikey',window.SUPABASE_PUBLISHABLE_KEY);xhr.setRequestHeader('Authorization','Bearer '+window.SUPABASE_PUBLISHABLE_KEY);xhr.setRequestHeader('Content-Type',contentType||'application/octet-stream');xhr.setRequestHeader('x-upsert','false');xhr.setRequestHeader('cache-control','3600');
+  xhr.onload=()=>{if(xhr.status>=200&&xhr.status<300)resolve();else reject(new Error('Storage HTTP '+xhr.status+': '+(xhr.responseText||xhr.statusText).slice(0,240)));};
+  xhr.onerror=()=>reject(new Error('Network/CORS error while reaching Supabase Storage. Try Chrome without VPN/ad blocker, or switch network.'));
+  xhr.ontimeout=()=>reject(new Error('Upload timed out. Try again on a stable connection.'));
+  xhr.timeout=120000;xhr.send(blob);
+ });
  try{
   const ext=(file.name.split('.').pop()||extFor(file.type)).replace(/[^a-z0-9]/gi,'').toLowerCase()||'m4a';
   audioPath='incoming/'+crypto.randomUUID()+'.'+ext;
-  const up=await db.storage.from('friends-mic-drop').upload(audioPath,file,{contentType:file.type||'audio/mpeg',upsert:false});if(up.error)throw up.error;
-  if(coverFile){const ce=coverFile.name.split('.').pop().toLowerCase();coverPath='incoming/'+crypto.randomUUID()+'.'+ce;const cu=await db.storage.from('friends-mic-drop').upload(coverPath,coverFile,{contentType:coverFile.type,upsert:false});if(cu.error)throw cu.error;}
+  await uploadFile(audioPath,file,file.type||'audio/mpeg');
+  if(coverFile){say('Step 2/3: Cover upload ho raha hai… 🖼️');const ce=coverFile.name.split('.').pop().toLowerCase();coverPath='incoming/'+crypto.randomUUID()+'.'+ce;await uploadFile(coverPath,coverFile,coverFile.type);}
+  say('Step 3/3: Admin review list mein save ho raha hai…');
   const ins=await db.from('friend_song_submissions').insert({user_id:null,email:artist,title,artist,audio_path:audioPath,cover_path:coverPath,status:'pending'});
-  if(ins.error)throw ins.error;
-  $('song-title').value='';$('stage-name').value='';$('audio-file').value='';$('cover-file').value='';recordedBlob=null;$('preview').classList.add('hidden');say('Gaana admin tak pahunch gaya! Approval ke baad Anna’s Song par live hoga. ❤️');
- }catch(e){if(audioPath)await db.storage.from('friends-mic-drop').remove(coverPath?[audioPath,coverPath]:[audioPath]);say('Upload nahi hua: '+e.message);}
+  if(ins.error)throw new Error('Database save failed: '+ins.error.message);
+  $('song-title').value='';$('stage-name').value='';$('audio-file').value='';$('cover-file').value='';recordedBlob=null;$('preview').classList.add('hidden');say('Gaana admin tak pahunch gaya! Admin Panel → Mic Drop submissions mein pending hai. Approval ke baad Made of melodies mein live hoga. ❤️');
+ }catch(e){if(audioPath)await db.storage.from('friends-mic-drop').remove(coverPath?[audioPath,coverPath]:[audioPath]).catch(()=>{});say('Upload nahi hua: '+(e.message||String(e)));}
  finally{btn.disabled=false;}
 };
 })();
