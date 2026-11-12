@@ -7,15 +7,54 @@
     grid.textContent='Website connection is unavailable. Please refresh.';return;
   }
   const db=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_PUBLISHABLE_KEY);
-  let songs=[],albums=[],links=[],activeAlbum=null;
+  let songs=[],albums=[],links=[],activeAlbum=null,currentVisible=[],playQueue=[],currentIndex=-1;
   const publicUrl=p=>p?db.storage.from(window.SONGS_BUCKET).getPublicUrl(p).data.publicUrl:'';
-  function showPlaying(song){
-    audio.src=publicUrl(song.audio_path);
-    audio.play().catch(()=>{});
-    const player=$('player');if(player)player.hidden=false;
-    if($('now-title'))$('now-title').textContent=song.title||'Untitled';
-    if($('now-artist'))$('now-artist').textContent=song.artist||'Anna';
+  const coverUrl=song=>publicUrl(song?.cover_path)||'cover-placeholder.svg';
+
+  function updateMediaSession(song){
+    if(!('mediaSession' in navigator))return;
+    try{
+      if('MediaMetadata' in window){
+        navigator.mediaSession.metadata=new MediaMetadata({
+          title:song.title||'Untitled',
+          artist:song.artist||'Anna',
+          album:"Anna's Song",
+          artwork:[96,128,192,256,384,512].map(size=>({src:coverUrl(song),sizes:size+'x'+size,type:'image/jpeg'}))
+        });
+      }
+      navigator.mediaSession.setActionHandler('play',()=>audio.play());
+      navigator.mediaSession.setActionHandler('pause',()=>audio.pause());
+      navigator.mediaSession.setActionHandler('previoustrack',playPrevious);
+      navigator.mediaSession.setActionHandler('nexttrack',playNext);
+      navigator.mediaSession.setActionHandler('seekbackward',details=>{audio.currentTime=Math.max(0,audio.currentTime-(details.seekOffset||10));});
+      navigator.mediaSession.setActionHandler('seekforward',details=>{audio.currentTime=Math.min(audio.duration||Infinity,audio.currentTime+(details.seekOffset||10));});
+    }catch(_){}
   }
+
+  function showPlaying(song,queue=currentVisible){
+    playQueue=queue.length?queue:[song];
+    currentIndex=playQueue.findIndex(item=>item.id===song.id);
+    if(currentIndex<0){playQueue=[song];currentIndex=0;}
+    audio.src=publicUrl(song.audio_path);
+    audio.load();
+    const player=$('player');if(player)player.hidden=false;
+    const title=$('now-title'),artist=$('now-artist'),cover=$('now-cover');
+    if(title)title.textContent=song.title||'Untitled';
+    if(artist)artist.textContent=song.artist||'Anna';
+    if(cover){cover.src=coverUrl(song);cover.alt=(song.title||'Song')+' cover';}
+    updateMediaSession(song);
+    audio.play().catch(()=>{});
+  }
+
+  function playNext(){
+    if(currentIndex>=0&&currentIndex<playQueue.length-1)showPlaying(playQueue[currentIndex+1],playQueue);
+  }
+  function playPrevious(){
+    if(currentIndex>0)showPlaying(playQueue[currentIndex-1],playQueue);
+    else if(audio.currentTime>3)audio.currentTime=0;
+  }
+  audio.addEventListener('ended',playNext);
+
   function renderAlbums(){
     if(!albumsGrid)return;
     albumsGrid.innerHTML='';
@@ -37,6 +76,7 @@
       albumsGrid.append(card);
     });
   }
+
   function renderSongs(){
     const q=search.value.trim().toLowerCase();
     const albumSongIds=new Set(links.map(x=>x.song_id));
@@ -45,23 +85,24 @@
       const ids=new Set(links.filter(x=>x.album_id===activeAlbum).map(x=>x.song_id));
       visible=visible.filter(s=>ids.has(s.id));
     }else{
-      // Keep album tracks inside their albums; do not repeat them in the main song list.
       visible=visible.filter(s=>!albumSongIds.has(s.id));
     }
     visible=visible.filter(s=>(String(s.title||'')+' '+String(s.artist||'')).toLowerCase().includes(q));
+    currentVisible=visible;
     count.textContent=visible.length+' songs'+(activeAlbum!==null?' in album':'');
     grid.innerHTML='';
     if(!visible.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='No songs found.';grid.append(empty);return;}
     visible.forEach(song=>{
       const card=document.createElement('div');card.className='song';
-      const cover=document.createElement('img');cover.className='cover';cover.alt='Song cover';cover.src=publicUrl(song.cover_path)||'cover-placeholder.svg';
+      const cover=document.createElement('img');cover.className='cover';cover.alt='Song cover';cover.src=coverUrl(song);
       const info=document.createElement('div');info.className='song-info';
       const title=document.createElement('strong');title.textContent=song.title||'Untitled';
       const artist=document.createElement('small');artist.textContent=song.artist||'Anna';info.append(title,artist);
-      const btn=document.createElement('button');btn.type='button';btn.textContent='▶ Play';btn.addEventListener('click',()=>showPlaying(song));
+      const btn=document.createElement('button');btn.type='button';btn.textContent='▶ Play';btn.addEventListener('click',()=>showPlaying(song,currentVisible));
       card.append(cover,info,btn);grid.append(card);
     });
   }
+
   search.addEventListener('input',renderSongs);
   async function load(){
     grid.textContent='Loading songs…';
