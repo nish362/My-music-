@@ -149,10 +149,24 @@ const safeFile=n=>String(n||'file').normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/
 const publicUrl=p=>p?db.storage.from(bucket).getPublicUrl(p).data.publicUrl:'';
 async function upload(file,folder){
  if(!file)return null;
- const path=folder+'/'+uid()+'-'+safeFile(file.name);
- const {data,error}=await db.storage.from(bucket).upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type||undefined});
- if(error)throw error;
- return data.path||path;
+ // Keep objects at the bucket root. This matches the existing files uploaded
+ // from the Supabase Dashboard and avoids folder-prefix policy/path issues.
+ const path=Date.now()+'-'+uid()+'-'+safeFile(file.name);
+ try {
+  const {data,error}=await db.storage.from(bucket).upload(path,file,{
+   cacheControl:'3600',
+   upsert:false,
+   contentType:file.type || 'application/octet-stream'
+  });
+  if(error)throw error;
+  return data.path||path;
+ } catch(err) {
+  console.error('Supabase Storage upload diagnostic:',err);
+  if(err instanceof TypeError && /fetch/i.test(err.message||'')) {
+   throw new Error('Browser could not reach Supabase Storage (network/CORS). Please refresh and retry; if it repeats, send this message to support.');
+  }
+  throw new Error(err.message || 'Storage upload failed.');
+ }
 }
 async function removeFiles(paths){
  const clean=[...new Set(paths.filter(Boolean))];
