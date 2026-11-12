@@ -145,6 +145,67 @@
     albums=a.error?[]:(a.data||[]);
     links=l.error?[]:(l.data||[]);
     renderAlbums();renderSongs();updateProgress();
+    if(typeof fillCommentSongs==='function')fillCommentSongs();
   }
+
+  const commentForm=$('comment-form');
+  if(commentForm){
+    let lastCommentAt=0;
+    const songSelect=$('comment-song');
+    function fillCommentSongs(){
+      if(!songSelect)return;
+      const chosen=songSelect.value;
+      songSelect.innerHTML='<option value="">General comment</option>';
+      songs.forEach(song=>{
+        const option=document.createElement('option');
+        option.value=song.id;option.textContent=song.title||'Untitled';
+        songSelect.append(option);
+      });
+      songSelect.value=chosen;
+    }
+    async function loadComments(){
+      const list=$('comments-list');
+      if(!list)return;
+      const {data,error}=await db.from('comments').select('id,song_id,display_name,message,created_at').order('created_at',{ascending:false}).limit(100);
+      list.innerHTML='';
+      if(error){list.textContent='Comments could not be loaded right now.';return;}
+      if(!data?.length){list.innerHTML='<div class="empty">No comments yet. Be the first to leave a little note ♡</div>';return;}
+      data.forEach(comment=>{
+        const item=document.createElement('article');item.className='comment-item';
+        const meta=document.createElement('div');meta.className='comment-meta';
+        const name=document.createElement('strong');name.textContent=comment.display_name;
+        const date=document.createElement('time');
+        const parsed=new Date(comment.created_at);
+        date.textContent=Number.isNaN(parsed.getTime())?'':parsed.toLocaleString();
+        meta.append(name,date);
+        const message=document.createElement('p');message.textContent=comment.message;
+        item.append(meta,message);
+        if(comment.song_id){
+          const song=songs.find(s=>s.id===comment.song_id);
+          if(song){const tag=document.createElement('span');tag.className='comment-song';tag.textContent='♪ '+song.title;item.append(tag);}
+        }
+        list.append(item);
+      });
+    }
+    commentForm.addEventListener('submit',async event=>{
+      event.preventDefault();
+      const name=$('comment-name').value.trim();
+      const message=$('comment-message').value.trim();
+      const songId=songSelect.value||null;
+      const status=$('comment-status'),button=$('comment-submit');
+      if(!name||!message){status.textContent='Please add your name and comment.';return;}
+      if(Date.now()-lastCommentAt<30000){status.textContent='Please wait a little before posting another comment.';return;}
+      button.disabled=true;status.textContent='Posting your comment…';
+      const {error}=await db.from('comments').insert({display_name:name,message,song_id:songId});
+      button.disabled=false;
+      if(error){status.textContent='Could not post comment. Please try again.';return;}
+      lastCommentAt=Date.now();$('comment-message').value='';
+      status.textContent='Your comment is posted. Thank you ♡';
+      await loadComments();
+    });
+    window.addEventListener('focus',loadComments);
+    loadComments();
+  }
+
   load();
 })();
