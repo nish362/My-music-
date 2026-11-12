@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#100d19">
+  <title>Anna's Song — Download all songs</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(circle at 15% 0%,#43234e 0,transparent 38%),#100d19;color:#f8f4ff;display:grid;place-items:center;padding:22px}
+    main{width:min(100%,560px);padding:28px;border:1px solid #ffffff20;border-radius:24px;background:#1b1725eF;box-shadow:0 24px 80px #0008}
+    .tag{color:#e7a9ff;font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:700}
+    h1{font-size:clamp(30px,8vw,44px);line-height:1.05;margin:12px 0}
+    p{color:#c9c0d4;line-height:1.6}
+    button{width:100%;border:0;border-radius:14px;padding:16px 18px;font-size:16px;font-weight:800;color:#1a1020;background:linear-gradient(100deg,#f5b7df,#c9b6ff);cursor:pointer;margin-top:14px}
+    button:disabled{opacity:.55;cursor:wait}
+    .track{height:9px;border-radius:20px;background:#ffffff18;overflow:hidden;margin:18px 0 8px}
+    #bar{height:100%;width:0;background:linear-gradient(90deg,#f5b7df,#c9b6ff);transition:width .2s}
+    #status{font-size:14px;color:#eee5f5;min-height:24px}
+    .note{font-size:12px;color:#a99eb7;margin-top:18px}
+  </style>
+</head>
+<body>
+<main>
+  <div class="tag">Anna's Song • Personal backup</div>
+  <h1>Saare gaane ek ZIP mein 🎧</h1>
+  <p>Button dabao. Website tumhari song list se audio files collect karke ek ZIP banayegi. Isse sirf download hoga—website par koi gaana delete ya change nahi hoga.</p>
+  <button id="download">76 songs ki ZIP banao</button>
+  <div class="track"><div id="bar"></div></div>
+  <div id="status" role="status">Ready — internet connection on rakho.</div>
+  <div class="note">ZIP banne tak page khula rakhein. Download ke baad ZIP ko ChatGPT chat mein attach kar dena.</div>
+</main>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+const button = document.getElementById('download');
+const statusEl = document.getElementById('status');
+const bar = document.getElementById('bar');
+
+function say(message, percent) {
+  statusEl.textContent = message;
+  if (Number.isFinite(percent)) bar.style.width = percent + '%';
+}
+function safeName(value) {
+  return String(value || 'Untitled').replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, ' ').trim().slice(0,100);
+}
+function extension(path) {
+  const match = String(path).match(/\.([a-z0-9]{2,5})$/i);
+  return match ? match[1].toLowerCase() : 'mp3';
+}
+function publicObjectUrl(path) {
+  const encodedPath = String(path).split('/').map(encodeURIComponent).join('/');
+  return SUPABASE_URL + '/storage/v1/object/public/' + encodeURIComponent(SONGS_BUCKET) + '/' + encodedPath;
+}
+button.addEventListener('click', async () => {
+  if (!window.SUPABASE_URL || !window.SUPABASE_PUBLISHABLE_KEY || !window.SONGS_BUCKET || !window.JSZip) {
+    say('Config ya ZIP library load nahi hui. Page refresh karke dobara try karo.');
+    return;
+  }
+  button.disabled = true;
+  bar.style.width = '0%';
+  try {
+    say('Song list load ho rahi hai…', 2);
+    const response = await fetch(SUPABASE_URL + '/rest/v1/songs?select=title,artist,audio_path&order=created_at.asc', {
+      headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + SUPABASE_PUBLISHABLE_KEY }
+    });
+    if (!response.ok) throw new Error('Song list load nahi hui (HTTP ' + response.status + ')');
+    const songs = await response.json();
+    if (!Array.isArray(songs) || !songs.length) throw new Error('Song list khaali mili.');
+    songs.sort((a,b) => String(a.title || '').localeCompare(String(b.title || ''), 'en', {numeric:true}));
+    const zip = new JSZip();
+    let completed = 0;
+    let failed = [];
+    let cursor = 0;
+    async function worker() {
+      while (cursor < songs.length) {
+        const index = cursor++;
+        const song = songs[index];
+        try {
+          if (!song.audio_path) throw new Error('audio path missing');
+          const audio = await fetch(publicObjectUrl(song.audio_path));
+          if (!audio.ok) throw new Error('HTTP ' + audio.status);
+          const blob = await audio.blob();
+          const title = safeName(song.title || ('Song ' + (index + 1)));
+          const artist = safeName(song.artist || 'Anna');
+          const filename = String(index + 1).padStart(2,'0') + ' - ' + title + ' - ' + artist + '.' + extension(song.audio_path);
+          zip.file(filename, blob);
+        } catch (error) {
+          failed.push((song.title || ('Song ' + (index + 1))) + ': ' + error.message);
+        }
+        completed++;
+        say('Audio collect ho rahe hain: ' + completed + '/' + songs.length + (failed.length ? ' • ' + failed.length + ' failed' : ''), 5 + Math.round(completed / songs.length * 75));
+      }
+    }
+    await Promise.all(Array.from({length: Math.min(4, songs.length)}, worker));
+    if (Object.keys(zip.files).length === 0) throw new Error('Koi audio file download nahi hui.');
+    say('ZIP file ban rahi hai…', 84);
+    const zipped = await zip.generateAsync({type:'blob', compression:'STORE'}, metadata => {
+      say('ZIP ready ho rahi hai… ' + Math.round(metadata.percent) + '%', 84 + Math.round(metadata.percent * .15));
+    });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(zipped);
+    link.href = url;
+    link.download = 'Annas-Song-Audio-Backup.zip';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    bar.style.width = '100%';
+    say('Ho gaya! ' + Object.keys(zip.files).length + ' audio files ki ZIP download start ho gayi.' + (failed.length ? ' ' + failed.length + ' files skip hui—details console mein hain.' : ''), 100);
+    if (failed.length) console.warn('Skipped audio files:', failed);
+  } catch (error) {
+    say('Error: ' + error.message + ' — dobara try karo.');
+    console.error(error);
+  } finally {
+    button.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
