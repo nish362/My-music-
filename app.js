@@ -142,13 +142,19 @@
       btn.addEventListener('click',()=>showPlaying(song,currentVisible));
       const actions=document.createElement('div');actions.className='song-actions';
       const fav=document.createElement('button');fav.type='button';fav.className='mini-action';fav.textContent=favorites.includes(song.id)?'♥ Saved':'♡ Save';fav.setAttribute('aria-label','Save favourite');
-      fav.onclick=()=>{favorites=favorites.includes(song.id)?favorites.filter(id=>id!==song.id):[song.id,...favorites];writeList('anna-favorites',favorites);fav.textContent=favorites.includes(song.id)?'♥ Saved':'♡ Save';};
+      fav.onclick=()=>{favorites=favorites.includes(song.id)?favorites.filter(id=>id!==song.id):[song.id,...favorites];writeList('anna-favorites',favorites);fav.textContent=favorites.includes(song.id)?'♥ Saved':'♡ Save';renderFavorites();};
       const share=document.createElement('button');share.type='button';share.className='mini-action';share.textContent='↗ Share';
       share.onclick=async()=>{const url=new URL(location.href);url.searchParams.set('song',song.id);try{if(navigator.share)await navigator.share({title:song.title,text:"Listen to "+song.title+" on Anna's Song",url:url.href});else{await navigator.clipboard.writeText(url.href);share.textContent='Copied!';}}catch(_){}};
       actions.append(fav,share);card.append(cover,info,btn,actions);grid.append(card);
     });
   }
   search.addEventListener('input',renderSongs);
+  function renderFavorites(){
+    const box=$('favorites-list');if(!box)return;box.innerHTML='';
+    const items=favorites.map(id=>songs.find(s=>s.id===id)).filter(Boolean);
+    if(!items.length){box.textContent='Tap ♡ Save on any song to keep it here.';return;}
+    items.forEach(song=>{const b=document.createElement('button');b.className='recent-chip';b.type='button';b.textContent='▶ '+song.title;b.onclick=()=>showPlaying(song,[song]);box.append(b);});
+  }
   function renderRecent(){
     const box=$('recent-list');if(!box)return;box.innerHTML='';
     const items=recent.map(id=>songs.find(s=>s.id===id)).filter(Boolean).slice(0,8);
@@ -178,7 +184,7 @@
     ]);
     albums=a.error?[]:(a.data||[]);
     links=l.error?[]:(l.data||[]);
-    renderAlbums();renderSongs();renderRecent();renderSongOfDay();updateProgress();
+    renderAlbums();renderSongs();renderRecent();renderFavorites();renderSongOfDay();updateProgress();
 
   }
 
@@ -257,6 +263,7 @@
   }
 
   load().then(()=>{
+    const shareId=new URLSearchParams(location.search).get('song');if(shareId){const shared=songs.find(s=>s.id===shareId);if(shared)showPlaying(shared,[shared]);}
     const select=$('comment-song');
     if(select){const selected=select.value;select.innerHTML='<option value="">General comment</option>';songs.forEach(song=>{const option=document.createElement('option');option.value=song.id;option.textContent=song.title||'Untitled';select.append(option);});select.value=selected;}
     if(window.refreshGuestbook)window.refreshGuestbook();
