@@ -1,134 +1,76 @@
 (() => {
   const $ = id => document.getElementById(id);
-
-  const grid = $('songs-grid');
-  const audio = $('audio');
-  const search = $('search');
-  const count = $('song-count');
-
-  function showError(message) {
-    if (grid) {
-      grid.innerHTML = `<div class="empty">${message}</div>`;
-    }
+  const grid=$('songs-grid'),audio=$('audio'),search=$('search'),count=$('song-count');
+  const albumsGrid=$('albums-grid');
+  if(!grid||!audio||!search||!count)return;
+  if(!window.supabase?.createClient||!window.SUPABASE_URL||!window.SUPABASE_PUBLISHABLE_KEY){
+    grid.textContent='Website connection is unavailable. Please refresh.';return;
   }
-
-  if (!grid || !audio || !search || !count) {
-    showError('Website setup error: HTML elements are missing.');
-    return;
+  const db=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_PUBLISHABLE_KEY);
+  let songs=[],albums=[],links=[],activeAlbum=null;
+  const publicUrl=p=>p?db.storage.from(window.SONGS_BUCKET).getPublicUrl(p).data.publicUrl:'';
+  function showPlaying(song){
+    audio.src=publicUrl(song.audio_path);
+    audio.play().catch(()=>{});
+    const player=$('player');if(player)player.hidden=false;
+    if($('now-title'))$('now-title').textContent=song.title||'Untitled';
+    if($('now-artist'))$('now-artist').textContent=song.artist||'Anna';
   }
-
-  if (!window.supabase || !window.supabase.createClient) {
-    showError('Supabase library did not load. Please refresh the page.');
-    return;
-  }
-
-  if (!window.SUPABASE_URL || !window.SUPABASE_PUBLISHABLE_KEY) {
-    showError('Supabase configuration is missing.');
-    return;
-  }
-
-  const db = window.supabase.createClient(
-    window.SUPABASE_URL,
-    window.SUPABASE_PUBLISHABLE_KEY
-  );
-
-  let songs = [];
-
-  function publicUrl(path) {
-    if (!path) return '';
-    return db.storage
-      .from(window.SONGS_BUCKET)
-      .getPublicUrl(path).data.publicUrl;
-  }
-
-  function playSong(song) {
-    audio.src = publicUrl(song.audio_path);
-    audio.play().catch(() => {
-      showError('Play button dabakar audio chalao.');
-    });
-
-    const player = $('player');
-    if (player) player.hidden = false;
-
-    if ($('now-title')) $('now-title').textContent = song.title;
-    if ($('now-artist')) {
-      $('now-artist').textContent = song.artist || 'Anna';
-    }
-  }
-
-  function render() {
-    const query = search.value.trim().toLowerCase();
-
-    const filtered = songs.filter(song =>
-      `${song.title || ''} ${song.artist || ''}`
-        .toLowerCase().includes(query)
-    );
-
-    count.textContent = `${songs.length} songs`;
-
-    if (!filtered.length) {
-      showError('No songs found.');
-      return;
-    }
-
-    grid.innerHTML = '';
-
-    filtered.forEach(song => {
-      const card = document.createElement('div');
-      card.className = 'song';
-
-      const cover = document.createElement('img');
-      cover.className = 'cover';
-      cover.alt = 'Song cover';
-      cover.src = song.cover_path
-        ? publicUrl(song.cover_path)
-        : 'cover-placeholder.svg';
-
-      const info = document.createElement('div');
-      info.className = 'song-info';
-
-      const title = document.createElement('strong');
-      title.textContent = song.title || 'Untitled';
-
-      const artist = document.createElement('small');
-      artist.textContent = song.artist || 'Anna';
-
-      info.append(title, artist);
-
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.textContent = '▶ Play';
-      button.addEventListener('click', () => playSong(song));
-
-      card.append(cover, info, button);
-      grid.append(card);
+  function renderAlbums(){
+    if(!albumsGrid)return;
+    albumsGrid.innerHTML='';
+    const all=document.createElement('button');
+    all.type='button';all.textContent=activeAlbum===null?'✓ All songs':'All songs';
+    all.style.cssText='min-height:48px;background:#30233f;color:#fff';
+    all.onclick=()=>{activeAlbum=null;renderAlbums();renderSongs();};
+    albumsGrid.append(all);
+    albums.forEach(album=>{
+      const card=document.createElement('button');card.type='button';
+      card.style.cssText='display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:10px;background:#21182f;color:#fff;border:1px solid #493752;border-radius:14px;text-align:left';
+      if(activeAlbum===album.id)card.style.outline='2px solid #c88bdc';
+      const img=document.createElement('img');img.src=publicUrl(album.cover_path)||'cover-placeholder.svg';img.alt='';img.style.cssText='width:100%;aspect-ratio:1;object-fit:cover;border-radius:9px';
+      const name=document.createElement('strong');name.textContent=album.title;
+      const n=links.filter(x=>x.album_id===album.id).length;
+      const small=document.createElement('small');small.textContent=n+' songs';small.style.color='#c2b4ce';
+      card.append(img,name,small);
+      card.onclick=()=>{activeAlbum=activeAlbum===album.id?null:album.id;renderAlbums();renderSongs();};
+      albumsGrid.append(card);
     });
   }
-
-  search.addEventListener('input', render);
-
-  async function loadSongs() {
-    showError('Loading songs...');
-
-    try {
-      const { data, error } = await db
-        .from('songs')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        showError('Could not load songs: ' + error.message);
-        return;
-      }
-
-      songs = data || [];
-      render();
-
-    } catch (error) {
-      showError('Connection error: ' + error.message);
+  function renderSongs(){
+    const q=search.value.trim().toLowerCase();
+    let visible=songs;
+    if(activeAlbum!==null){
+      const ids=links.filter(x=>x.album_id===activeAlbum).map(x=>x.song_id);
+      visible=visible.filter(s=>ids.includes(s.id));
     }
+    visible=visible.filter(s=>(String(s.title||'')+' '+String(s.artist||'')).toLowerCase().includes(q));
+    count.textContent=visible.length+' songs'+(activeAlbum!==null?' in album':'');
+    grid.innerHTML='';
+    if(!visible.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='No songs found.';grid.append(empty);return;}
+    visible.forEach(song=>{
+      const card=document.createElement('div');card.className='song';
+      const cover=document.createElement('img');cover.className='cover';cover.alt='Song cover';cover.src=publicUrl(song.cover_path)||'cover-placeholder.svg';
+      const info=document.createElement('div');info.className='song-info';
+      const title=document.createElement('strong');title.textContent=song.title||'Untitled';
+      const artist=document.createElement('small');artist.textContent=song.artist||'Anna';info.append(title,artist);
+      const btn=document.createElement('button');btn.type='button';btn.textContent='▶ Play';btn.addEventListener('click',()=>showPlaying(song));
+      card.append(cover,info,btn);grid.append(card);
+    });
   }
-
-  loadSongs();
+  search.addEventListener('input',renderSongs);
+  async function load(){
+    grid.textContent='Loading songs…';
+    const {data:s,error}=await db.from('songs').select('*').order('created_at',{ascending:false});
+    if(error){grid.textContent='Could not load songs: '+error.message;return;}
+    songs=s||[];
+    const [a,l]=await Promise.all([
+      db.from('albums').select('*').order('created_at',{ascending:false}),
+      db.from('album_songs').select('*')
+    ]);
+    albums=a.error?[]:(a.data||[]);
+    links=l.error?[]:(l.data||[]);
+    renderAlbums();renderSongs();
+  }
+  load();
 })();
-
