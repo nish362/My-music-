@@ -66,6 +66,19 @@
     .album-card.active{outline:2px solid var(--rose);background:#f8e8df}
     .all-songs{grid-column:1/-1;width:max-content;border:1px solid #bd8a7e;background:#f7e7dc;color:var(--wine);padding:10px 18px;border-radius:24px;font: bold 13px Arial,sans-serif}
     .empty{text-align:center;color:var(--muted);font:14px Arial,sans-serif;padding:28px 10px}
+    .comments-panel{background:#fff9f0d9;border:1px solid #dfc4b1;border-radius:22px;padding:18px;box-shadow:0 10px 28px #75434a0d}
+    .comment-form{display:grid;gap:10px;margin-bottom:18px}
+    .comment-input{width:100%;padding:13px 15px;border:1px solid #dfc4b1;border-radius:13px;background:#fffdf8;color:var(--ink);font:14px Arial,sans-serif;outline:none}
+    .comment-input:focus{border-color:var(--rose);box-shadow:0 0 0 3px #b66f7020}
+    .comment-submit{justify-self:start;border:0;border-radius:24px;background:var(--wine);color:#fff8ed;padding:12px 19px;font:bold 13px Arial,sans-serif}
+    .comment-submit:disabled{opacity:.55;cursor:wait}
+    .comment-item{padding:13px 4px;border-top:1px solid #ead9ca}
+    .comment-meta{display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .comment-meta strong{font:bold 14px Arial,sans-serif;color:var(--wine-deep)}
+    .comment-meta time{font:11px Arial,sans-serif;color:var(--muted)}
+    .comment-item p{font:14px/1.6 Arial,sans-serif;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere;margin:7px 0 0}
+    .comment-song{display:inline-block;margin-top:6px;color:var(--rose);font:11px Arial,sans-serif}
+    .comment-status{font:12px Arial,sans-serif;color:var(--muted);min-height:18px;margin:0 0 8px}
     .upload-panel{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
     .upload-panel p{font:13px/1.6 Arial,sans-serif;color:var(--muted);margin:7px 0 0}
     .upload-button{border:0;border-radius:24px;background:var(--wine);color:#fff8ed;padding:12px 18px;font:bold 13px Arial,sans-serif}
@@ -122,6 +135,20 @@
     <div class="playlist upload-panel">
       <div><strong>Have a new melody?</strong><p>Add another song to your little music corner.</p></div>
       <button class="upload-button" onclick="location.href='admin.html'">＋ Upload songs</button>
+    </div>
+  </section>
+
+  <section class="section" id="comments-section">
+    <div class="section-heading"><h2>Little Guestbook ♡</h2><span class="count">leave a lovely note</span></div>
+    <div class="comments-panel">
+      <form id="comment-form" class="comment-form">
+        <input id="comment-name" class="comment-input" maxlength="40" placeholder="Your name" required>
+        <select id="comment-song" class="comment-input"><option value="">General comment</option></select>
+        <textarea id="comment-message" class="comment-input" maxlength="1000" rows="3" placeholder="Write your comment..." required></textarea>
+        <button id="comment-submit" class="comment-submit" type="submit">Post comment ♡</button>
+      </form>
+      <p id="comment-status" class="comment-status" aria-live="polite"></p>
+      <div id="comments-list"><div class="empty">Loading comments...</div></div>
     </div>
   </section>
 
