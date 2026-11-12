@@ -85,6 +85,19 @@
     footer{text-align:center;color:#9b7770;font:12px Arial,sans-serif;padding:30px 16px 38px}
 
 
+
+    body{padding-bottom:112px}
+    .mic-drop-card{display:none!important}
+    .bottom-nav{position:fixed;z-index:20;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:9px 8px calc(9px + env(safe-area-inset-bottom));background:#fffaf2f2;border-top:1px solid #dfc4b1;backdrop-filter:blur(18px);box-shadow:0 -8px 26px #4e26311a}
+    .bottom-nav a{min-width:0;text-decoration:none;color:#8d6d68;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:5px 2px;border-radius:14px;font:11px Arial,sans-serif;transition:background .2s,color .2s,transform .2s}
+    .bottom-nav a .nav-icon{width:35px;height:29px;display:grid;place-items:center;font-size:22px;line-height:1}
+    .bottom-nav a.active{color:#713542;background:#f3e2d9;font-weight:bold}
+    .bottom-nav a.mic-tab .nav-icon{width:48px;height:42px;margin-top:-19px;border:4px solid #fffaf2;border-radius:50%;background:linear-gradient(135deg,#713542,#c66cba);color:white;font-size:23px;box-shadow:0 4px 13px #71354240}
+    .bottom-nav a.mic-tab{color:#713542;font-weight:bold}
+    .bottom-nav a:active{transform:scale(.94)}
+    @media(min-width:760px){.bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(680px,calc(100% - 40px));bottom:14px;border:1px solid #dfc4b1;border-radius:24px;padding:9px 12px;box-shadow:0 10px 35px #4e26312b}}
+    @media(prefers-reduced-motion:reduce){.bottom-nav a{transition:none}}
+
     .mic-drop-card{display:block;position:relative;overflow:hidden;text-decoration:none;color:#fff8ff;border-radius:28px;padding:26px;background:radial-gradient(circle at 90% 5%,#ff9cce66,transparent 32%),linear-gradient(125deg,#30164f,#713c9c 52%,#d45b9c);box-shadow:0 18px 42px #592a702c;transition:transform .25s,box-shadow .25s}
     .mic-drop-card:hover{transform:translateY(-4px);box-shadow:0 22px 50px #592a7045}
     .mic-drop-badge{display:inline-block;border:1px solid #ffffff66;border-radius:30px;padding:7px 11px;font:10px Arial,sans-serif;letter-spacing:1.5px}
@@ -155,12 +168,12 @@
     <audio id="audio" preload="none" playsinline></audio>
   </section>
 
-  <section class="section">
+  <section class="section" id="library-section">
     <div class="section-heading"><h2>Albums</h2><span class="count">little collections</span></div>
     <div id="albums-grid" class="playlist"><div class="empty">Loading albums...</div></div>
   </section>
 
-  <section class="section">
+  <section class="section" id="songs-section">
     <div class="section-heading"><h2>Made of melodies</h2><span class="count" id="song-count">0 songs</span></div>
     <div class="playlist">
       <input class="search" id="search" type="search" placeholder="Find a song or artist...">
@@ -199,9 +212,18 @@
     </div>
   </section>
 
+
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <a href="#home" class="active" data-nav="home"><span class="nav-icon">⌂</span><span>Home</span></a>
+    <a href="#songs-section" data-nav="search"><span class="nav-icon">⌕</span><span>Search</span></a>
+    <a href="mic-drop.html" class="mic-tab" data-nav="mic"><span class="nav-icon">🎤</span><span>Mic Drop</span></a>
+    <a href="#library-section" data-nav="library"><span class="nav-icon">▤</span><span>Library</span></a>
+    <a href="#comments-section" data-nav="guestbook"><span class="nav-icon">♡</span><span>Guestbook</span></a>
+  </nav>
+
   <footer>Made with love ♡ · Anna's Song</footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
-  <script src="app.js?v=20261112-micdrop1"></script>
+  <script src="app.js?v=20261112-bottomnav1"></script>
 </body>
 </html>
