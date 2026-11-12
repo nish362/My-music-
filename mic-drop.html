@@ -12,52 +12,42 @@ label{display:block;font-size:13px;font-weight:bold;margin:13px 0 7px}input,sele
 <header class="top"><a class="brand" href="./">anna's song ♡</a><a class="back" href="./">← Back to music</a></header>
 <main>
 <section class="hero"><span class="pill">FRIENDS ONLY · OPEN MIC</span><div class="emoji">🎤</div><h1>Mic Drop!</h1><p>Sur ka ho ya besura, confidence full hona chahiye! 😂 Apna gaana record karo ya upload karo. Stage tumhara hai, doston ki taaliyan ready hain.</p></section>
-<section class="card" id="login-card"><h2>🎟️ Get your backstage pass</h2><p class="muted">Apna email daalo. Login link email par aayega. Pehli baar access ke liye admin approval chahiye — sirf approved friends upload kar sakenge.</p><label>Email address</label><input id="email" type="email" placeholder="you@example.com" autocomplete="email"><div style="margin-top:12px"><button id="send-link">Send me a login link ✨</button></div><p id="login-status" class="status"></p></section>
-<section class="card hidden" id="friend-area"><div class="row"><div><h2 id="hello">Welcome to the stage!</h2><p class="muted" id="friend-email"></p></div><button class="secondary" id="logout">Log out</button></div>
-<div id="request-area" class="record hidden"><h2>One tiny step before the spotlight 🌟</h2><p class="muted">Tumhari email admin ko approval ke liye bheji jayegi. Approval ke baad tum yahin se gaane upload kar paoge.</p><button id="request-access">Request friend access</button><p id="request-status" class="status"></p></div>
-<div id="upload-area" class="hidden">
-<div class="card" style="margin:12px 0;background:#fffaff"><h2>🎙️ Record right here</h2><p class="muted">Mic permission allow karo, phir apna best (ya funniest) take do. Recording tumhare phone/browser mein preview hogi.</p><div class="record"><button class="mic" id="record-btn" aria-label="Start recording">🎤</button><p id="record-label" class="muted">Tap mic to start recording</p><div id="record-time" class="tag">00:00</div><audio id="preview" controls class="hidden"></audio></div></div>
-<div class="card" style="margin:12px 0"><h2>📤 Or upload an existing song</h2><label>Song title</label><input id="song-title" maxlength="100" placeholder="My first masterpiece"><label>Artist / your stage name</label><input id="stage-name" maxlength="80" placeholder="Your name"><label>Audio file</label><input id="audio-file" type="file" accept="audio/*"><label>Cover photo (optional)</label><input id="cover-file" type="file" accept="image/jpeg,image/png,image/webp"><p class="muted">Audio up to 50 MB. Cover JPG, PNG or WebP up to 5 MB.</p><button id="submit-song">Send to admin for approval ♡</button><p id="upload-status" class="status"></p></div>
-<div class="card"><h2>🎧 My playlist</h2><p class="muted">Your submissions and their review status.</p><div id="my-songs">Loading...</div></div>
-</div></section>
+<section class="card" id="upload-area">
+<div class="card" style="margin:0 0 12px;background:#fffaff"><h2>🎙️ Record right here</h2><p class="muted">Mic permission allow karo, phir apna gaana record karo. Recording preview karke bhej sakte ho.</p><div class="record"><button class="mic" id="record-btn" aria-label="Start recording">🎤</button><p id="record-label" class="muted">Tap mic to start recording</p><div id="record-time" class="tag">00:00</div><audio id="preview" controls class="hidden"></audio></div></div>
+<div class="card" style="margin:12px 0"><h2>📤 Upload your song</h2><label>Song title</label><input id="song-title" maxlength="100" placeholder="My first masterpiece"><label>Your name / stage name</label><input id="stage-name" maxlength="80" placeholder="Your name"><label>Audio file (optional if recorded above)</label><input id="audio-file" type="file" accept="audio/*"><label>Cover photo (optional)</label><input id="cover-file" type="file" accept="image/jpeg,image/png,image/webp"><p class="muted">Audio up to 50 MB. Cover JPG, PNG or WebP up to 5 MB. Song admin approval ke baad hi public website par live hoga.</p><button id="submit-song">Send song for approval ♡</button><p id="upload-status" class="status"></p></div>
+</section>
 <div class="footer">Made for friends, with extra reverb and zero judgement ♡</div></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script><script src="config.js"></script>
 <script>
 (()=>{
-const $=id=>document.getElementById(id);const db=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_PUBLISHABLE_KEY);
-let user=null,approved=false,recordedBlob=null,recorder=null,stream=null,started=0,tick=null;
-const say=(id,msg)=>$(id).textContent=msg;
+const $=id=>document.getElementById(id);
+if(!window.supabase?.createClient||!window.SUPABASE_URL||!window.SUPABASE_PUBLISHABLE_KEY){$('upload-status').textContent='Site setup missing. Please refresh later.';return;}
+const db=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_PUBLISHABLE_KEY);
+let recordedBlob=null,recorder=null,stream=null,started=0,tick=null;
+const say=msg=>$('upload-status').textContent=msg;
 function extFor(type){if(type.includes('mp4'))return'm4a';if(type.includes('wav'))return'wav';if(type.includes('ogg'))return'ogg';if(type.includes('mpeg'))return'mp3';if(type.includes('webm'))return'webm';return'm4a';}
-async function load(){
- const {data}=await db.auth.getUser();user=data.user;
- if(!user){$('login-card').classList.remove('hidden');$('friend-area').classList.add('hidden');return;}
- $('login-card').classList.add('hidden');$('friend-area').classList.remove('hidden');$('friend-email').textContent=user.email;$('hello').textContent='Welcome, '+(user.email.split('@')[0])+'! 🎉';
- const [grant,req]=await Promise.all([db.from('access_grants').select('user_id').eq('user_id',user.id).maybeSingle(),db.from('access_requests').select('status').eq('user_id',user.id).maybeSingle()]);
- approved=!!grant.data;
- $('request-area').classList.toggle('hidden',approved);$('upload-area').classList.toggle('hidden',!approved);
- if(!approved)say('request-status',req.data?.status==='pending'?'Your request is waiting for admin approval 💌':'');
- if(approved)loadMine();
-}
-async function loadMine(){const box=$('my-songs');const {data,error}=await db.from('friend_song_submissions').select('id,title,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false});box.innerHTML='';if(error){box.textContent='Could not load submissions.';return;}if(!data?.length){box.textContent='Abhi playlist khaali hai. Pehla banger tumhara! 😎';return;}data.forEach(s=>{const d=document.createElement('div');d.className='submission';const t=document.createElement('strong');t.textContent=s.title;const st=document.createElement('span');st.className='tag';st.textContent=s.status==='pending'?'⏳ Waiting for approval':s.status==='approved'?'✅ Approved — live on Anna’s Song':'↩️ Not approved';d.append(t,st);if(s.status==='pending'){const play=document.createElement('button');play.className='secondary';play.textContent='Preview my upload';play.style.marginTop='8px';play.onclick=async()=>{const {data,error}=await db.storage.from('friends-mic-drop').createSignedUrl(s.audio_path,600);if(error){say('upload-status',error.message);return;}const a=document.createElement('audio');a.controls=true;a.src=data.signedUrl;a.style.width='100%';d.append(a);play.remove();};d.append(play);}if(s.status==='approved'&&s.song_id){const link=document.createElement('a');link.href='./?song='+encodeURIComponent(s.song_id);link.textContent='Listen on Anna’s Song ↗';link.className='tag';d.append(link);}box.append(d);});}
-$('send-link').onclick=async()=>{const email=$('email').value.trim();if(!email){say('login-status','Email daal do pehle.');return;}$('send-link').disabled=true;say('login-status','Login link bhej rahe hain…');const {error}=await db.auth.signInWithOtp({email,options:{emailRedirectTo:location.href}});if(error){const msg=error.message||'Unknown email error';say('login-status',/rate limit|over_email_send_rate_limit/i.test(msg)?'Supabase ka built-in email limit reach ho gaya hai. Friends ke Gmail par links bhejne ke liye site owner ko Custom SMTP set karna hoga. Filhaal baar-baar retry na karein.':msg);}else{say('login-status','Login link bhej diya! Email inbox check karo. ✉️');}$('send-link').disabled=false;};
-$('request-access').onclick=async()=>{const {error}=await db.from('access_requests').insert({user_id:user.id,email:user.email,status:'pending'});say('request-status',error?(error.code==='23505'?'Request pehle se bheji ja chuki hai. Admin approval ka wait karo. 💌':'Request nahi bhej paye: '+error.message):'Request sent! Admin approval milte hi upload option unlock ho jayega. 💌');};
-$('logout').onclick=async()=>{await db.auth.signOut();location.reload();};
 $('record-btn').onclick=async()=>{
  if(recorder?.state==='recording'){recorder.stop();clearInterval(tick);$('record-btn').classList.remove('recording');$('record-btn').textContent='🎤';$('record-label').textContent='Recording ready — listen below or send it';return;}
- try{stream=await navigator.mediaDevices.getUserMedia({audio:true});const mime=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(t=>MediaRecorder.isTypeSupported(t));recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);const chunks=[];recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};recorder.onstop=()=>{recordedBlob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});const p=$('preview');p.src=URL.createObjectURL(recordedBlob);p.classList.remove('hidden');stream.getTracks().forEach(t=>t.stop());};recorder.start();started=Date.now();$('record-btn').classList.add('recording');$('record-btn').textContent='■';$('record-label').textContent='Recording… tap again to stop';tick=setInterval(()=>{const n=Math.floor((Date.now()-started)/1000);$('record-time').textContent=String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');if(n>=180)$('record-btn').click();},500);}catch(e){say('upload-status','Mic permission nahi mili: '+e.message);}
+ try{stream=await navigator.mediaDevices.getUserMedia({audio:true});const mime=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(t=>MediaRecorder.isTypeSupported(t));recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);const chunks=[];recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};recorder.onstop=()=>{recordedBlob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});const p=$('preview');p.src=URL.createObjectURL(recordedBlob);p.classList.remove('hidden');stream.getTracks().forEach(t=>t.stop());};recorder.start();started=Date.now();$('record-btn').classList.add('recording');$('record-btn').textContent='■';$('record-label').textContent='Recording… tap again to stop';tick=setInterval(()=>{const n=Math.floor((Date.now()-started)/1000);$('record-time').textContent=String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');if(n>=180)$('record-btn').click();},500);}catch(e){say('Mic permission nahi mili: '+e.message);}
 };
 $('submit-song').onclick=async()=>{
- if(!approved||!user)return;const title=$('song-title').value.trim(),artist=$('stage-name').value.trim()||user.email.split('@')[0];let file=$('audio-file').files[0];
- if(!file&&recordedBlob)file=new File([recordedBlob],title||'mic-drop.'+extFor(recordedBlob.type),{type:recordedBlob.type});
- if(!title||!file){say('upload-status','Song title aur recording/audio file dono chahiye.');return;}
- if(file.size>50*1024*1024){say('upload-status','File 50 MB se chhoti rakho.');return;}
- const coverFile=$('cover-file').files[0];if(coverFile&&(!['image/jpeg','image/png','image/webp'].includes(coverFile.type)||coverFile.size>5*1024*1024)){say('upload-status','Cover JPG, PNG ya WebP ho aur 5 MB se chhoti ho.');return;}const btn=$('submit-song');btn.disabled=true;say('upload-status','Uploading… thoda sa patience 🎶');
- try{const ext=(file.name.split('.').pop()||extFor(file.type)).replace(/[^a-z0-9]/gi,'').toLowerCase()||'m4a';const path=user.id+'/'+crypto.randomUUID()+'.'+ext;
- const up=await db.storage.from('friends-mic-drop').upload(path,file,{contentType:file.type||'audio/mpeg',upsert:false});if(up.error)throw up.error;
- let coverPath=null;if(coverFile){const ce=coverFile.name.split('.').pop().toLowerCase();coverPath=user.id+'/'+crypto.randomUUID()+'.'+ce;const cu=await db.storage.from('friends-mic-drop').upload(coverPath,coverFile,{contentType:coverFile.type,upsert:false});if(cu.error){await db.storage.from('friends-mic-drop').remove([path]);throw cu.error;}}const ins=await db.from('friend_song_submissions').insert({user_id:user.id,email:user.email,title,artist,audio_path:path,cover_path:coverPath});if(ins.error){await db.storage.from('friends-mic-drop').remove(coverPath?[path,coverPath]:[path]);throw ins.error;}
- $('song-title').value='';$('audio-file').value='';$('cover-file').value='';recordedBlob=null;$('preview').classList.add('hidden');say('upload-status','Submission pahunch gayi! Admin approval ke baad gaana live hoga. 🎉');await loadMine();
- }catch(e){say('upload-status','Upload nahi hua: '+e.message);}finally{btn.disabled=false;}
+ const title=$('song-title').value.trim(),artist=$('stage-name').value.trim()||'Friend';let file=$('audio-file').files[0];
+ if(!file&&recordedBlob)file=new File([recordedBlob],(title||'mic-drop')+'.'+extFor(recordedBlob.type),{type:recordedBlob.type});
+ if(!title||!file){say('Song title aur recording/audio file dono chahiye.');return;}
+ if(file.size>50*1024*1024){say('File 50 MB se chhoti rakho.');return;}
+ const coverFile=$('cover-file').files[0];if(coverFile&&(!['image/jpeg','image/png','image/webp'].includes(coverFile.type)||coverFile.size>5*1024*1024)){say('Cover JPG, PNG ya WebP ho aur 5 MB se chhoti ho.');return;}
+ const btn=$('submit-song');btn.disabled=true;say('Uploading… thoda sa patience 🎶');
+ let audioPath=null,coverPath=null;
+ try{
+  const ext=(file.name.split('.').pop()||extFor(file.type)).replace(/[^a-z0-9]/gi,'').toLowerCase()||'m4a';
+  audioPath='incoming/'+crypto.randomUUID()+'.'+ext;
+  const up=await db.storage.from('friends-mic-drop').upload(audioPath,file,{contentType:file.type||'audio/mpeg',upsert:false});if(up.error)throw up.error;
+  if(coverFile){const ce=coverFile.name.split('.').pop().toLowerCase();coverPath='incoming/'+crypto.randomUUID()+'.'+ce;const cu=await db.storage.from('friends-mic-drop').upload(coverPath,coverFile,{contentType:coverFile.type,upsert:false});if(cu.error)throw cu.error;}
+  const ins=await db.from('friend_song_submissions').insert({user_id:null,email:artist,title,artist,audio_path:audioPath,cover_path:coverPath,status:'pending'});
+  if(ins.error)throw ins.error;
+  $('song-title').value='';$('stage-name').value='';$('audio-file').value='';$('cover-file').value='';recordedBlob=null;$('preview').classList.add('hidden');say('Gaana admin tak pahunch gaya! Approval ke baad Anna’s Song par live hoga. ❤️');
+ }catch(e){if(audioPath)await db.storage.from('friends-mic-drop').remove(coverPath?[audioPath,coverPath]:[audioPath]);say('Upload nahi hua: '+e.message);}
+ finally{btn.disabled=false;}
 };
-db.auth.onAuthStateChange(()=>setTimeout(load,0));load();
 })();
 </script></body></html>
