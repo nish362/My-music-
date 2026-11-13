@@ -173,23 +173,23 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">Anna's <span>Song ♡</span></div>
-    <div class="top-note">little songs · lovely memories</div>
+    <div class="brand" data-custom="siteBrand">Anna's <span>Song ♡</span></div>
+    <div class="top-note" data-custom="tagline">little songs · lovely memories</div>
   </header>
 
   <section class="hero" id="home">
-    <span class="eyebrow">A LITTLE MUSIC CORNER</span>
-    <h1>Every song holds <em>a memory.</em></h1>
-    <p>Soft melodies, familiar voices and moments worth keeping. Pick a song and make yourself at home.</p>
+    <span class="eyebrow" data-custom="heroEyebrow">A LITTLE MUSIC CORNER</span>
+    <h1><span data-custom="heroTitle">Every song holds</span> <em data-custom="heroHighlight">a memory.</em></h1>
+    <p data-custom="heroDescription">Soft melodies, familiar voices and moments worth keeping. Pick a song and make yourself at home.</p>
   </section>
 
   <section id="song-of-day" hidden aria-label="Song of the day"></section>
-  <section class="section" style="padding-top:0;padding-bottom:12px">
-    <div class="section-heading"><h2>💗 Your favourites</h2><span class="count">saved songs</span></div>
+  <section class="section" id="favorites-section" style="padding-top:0;padding-bottom:12px">
+    <div class="section-heading"><h2 data-custom="favoritesTitle">💗 Your favourites</h2><span class="count">saved songs</span></div>
     <div id="favorites-list"></div>
   </section>
-  <section class="section" style="padding-top:0;padding-bottom:12px">
-    <div class="section-heading"><h2>🕘 Recently played</h2><span class="count">your listening trail</span></div>
+  <section class="section" id="recent-section" style="padding-top:0;padding-bottom:12px">
+    <div class="section-heading"><h2 data-custom="recentTitle">🕘 Recently played</h2><span class="count">your listening trail</span></div>
     <div id="recent-list"></div>
   </section>
   <section id="player" aria-label="Now playing">
@@ -212,12 +212,12 @@
   </section>
 
   <section class="section" id="library-section">
-    <div class="section-heading"><h2>💿 Albums</h2><span class="count">little collections</span></div>
+    <div class="section-heading"><h2 data-custom="albumsTitle">💿 Albums</h2><span class="count">little collections</span></div>
     <div id="albums-grid" class="playlist"><div class="empty">Loading albums...</div></div>
   </section>
 
   <section class="section" id="songs-section">
-    <div class="section-heading"><h2>🎶 Made of melodies</h2><span class="count" id="song-count">0 songs</span></div>
+    <div class="section-heading"><h2 data-custom="songsTitle">🎶 Made of melodies</h2><span class="count" id="song-count">0 songs</span></div>
     <div class="playlist">
       <input class="search" id="search" type="search" placeholder="Find a song or artist...">
       <div id="songs-grid"><div class="empty">Loading songs...</div></div>
@@ -225,30 +225,30 @@
   </section>
 
   <section class="section community-section" id="community-songs">
-    <div class="section-heading"><h2>Made of melodies ✨</h2><span class="count">Friends on the mic</span></div>
-    <p class="community-intro">Doston ki awaaz, unke original songs — sab ek jagah. 🎤</p>
+    <div class="section-heading"><h2 data-custom="communityTitle">Made of melodies ✨</h2><span class="count">Friends on the mic</span></div>
+    <p class="community-intro" data-custom="communityDescription">Doston ki awaaz, unke original songs — sab ek jagah. 🎤</p>
     <div id="community-songs-grid" class="community-grid"><div class="empty">Loading friends' songs…</div></div>
   </section>
 
-  <section class="section">
+  <section class="section" id="upload-section">
     <div class="playlist upload-panel">
-      <div><strong>🎵 Have a new melody?</strong><p>Add another song to your little music corner.</p></div>
+      <div><strong data-custom="uploadTitle">🎵 Have a new melody?</strong><p data-custom="uploadDescription">Add another song to your little music corner.</p></div>
       <button class="upload-button" onclick="location.href='admin.html'">＋ Upload songs</button>
     </div>
   </section>
 
-  <section class="section">
+  <section class="section" id="mic-section">
     <a class="mic-drop-card" href="mic-drop.html">
-      <span class="mic-drop-badge">FRIENDS ONLY · OPEN MIC</span>
-      <span class="mic-drop-title">Mic Drop <span>🎤</span></span>
-      <span class="mic-drop-copy">Apni awaaz lao, apna gaana sunao. Record karo ya upload karo — stage tumhara hai!</span>
+      <span class="mic-drop-badge" data-custom="micBadge">FRIENDS ONLY · OPEN MIC</span>
+      <span class="mic-drop-title"><span data-custom="micTitle">Mic Drop</span> <span>🎤</span></span>
+      <span class="mic-drop-copy" data-custom="micDescription">Apni awaaz lao, apna gaana sunao. Record karo ya upload karo — stage tumhara hai!</span>
       <span class="mic-drop-cta">Enter the fun zone ↗</span>
       <span class="mic-drop-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
     </a>
   </section>
 
   <section class="section" id="comments-section">
-    <div class="section-heading"><h2>💌 Little Guestbook</h2><span class="count">leave a lovely note</span></div>
+    <div class="section-heading"><h2 data-custom="guestbookTitle">💌 Little Guestbook</h2><span class="count" data-custom="guestbookSubtitle">leave a lovely note</span></div>
     <div class="comments-panel">
       <form id="comment-form" class="comment-form">
         <input id="comment-name" class="comment-input" maxlength="40" placeholder="Your name" required>
@@ -263,16 +263,16 @@
 
 
   <nav class="bottom-nav" aria-label="Main navigation">
-    <a href="#home" class="active" data-nav="home"><span class="nav-icon">🏠</span><span>Home</span></a>
-    <a href="#songs-section" data-nav="search"><span class="nav-icon">🔎</span><span>Search</span></a>
-    <a href="mic-drop.html" class="mic-tab" data-nav="mic"><span class="nav-icon">🎤</span><span>Mic Drop</span></a>
-    <a href="#community-songs" data-nav="melodies"><span class="nav-icon">🌟</span><span>Made of melodies</span></a>
-    <a href="#comments-section" data-nav="guestbook"><span class="nav-icon">💌</span><span>Guestbook</span></a>
+    <a href="#home" class="active" data-nav="home"><span class="nav-icon">🏠</span><span data-custom="navHome">Home</span></a>
+    <a href="#songs-section" data-nav="search"><span class="nav-icon">🔎</span><span data-custom="navSearch">Search</span></a>
+    <a href="mic-drop.html" class="mic-tab" data-nav="mic"><span class="nav-icon">🎤</span><span data-custom="navMic">Mic Drop</span></a>
+    <a href="#community-songs" data-nav="melodies"><span class="nav-icon">🌟</span><span data-custom="navCommunity">Made of melodies</span></a>
+    <a href="#comments-section" data-nav="guestbook"><span class="nav-icon">💌</span><span data-custom="navGuestbook">Guestbook</span></a>
   </nav>
 
-  <footer>Made with love ♡ · Anna's Song</footer>
+  <footer data-custom="footer">Made with love ♡ · Anna's Song</footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
-  <script src="app.js?v=20261113-requiredname3"></script>
+  <script src="app.js?v=20261113-custom1"></script>
 </body>
 </html>
