@@ -371,6 +371,29 @@
     loadComments();
   }
 
+  async function applySiteCustomization(){
+    const {data}=await db.from('site_customization').select('settings').eq('id','public').maybeSingle();
+    const s=data?.settings||{};
+    Object.entries(s.text||{}).forEach(([key,value])=>{
+      const el=document.querySelector('[data-custom="'+key+'"]');
+      if(el&&typeof value==='string')el.textContent=value;
+    });
+    const root=document.documentElement;
+    Object.entries(s.colors||{}).forEach(([key,value])=>{
+      if(/^#[0-9a-f]{6}$/i.test(value))root.style.setProperty('--'+key,value);
+    });
+    const visibility=s.visibility||{};
+    const sections={favorites:'favorites-section',recent:'recent-section',albums:'library-section',songs:'songs-section',community:'community-songs',upload:'upload-section',mic:'mic-section',guestbook:'comments-section'};
+    Object.entries(sections).forEach(([key,id])=>{const el=document.getElementById(id);if(el&&visibility[key]===false)el.hidden=true;});
+    const heroImage=s.heroImage;
+    if(typeof heroImage==='string'&&/^https?:\/\//i.test(heroImage)){
+      const hero=document.querySelector('.hero');
+      if(hero)hero.style.backgroundImage='linear-gradient(90deg,#fff8edee,#fff8ed99),url("'+heroImage.replace(/["\\]/g,'')+'")';
+      if(hero)hero.style.backgroundSize='cover';if(hero)hero.style.backgroundPosition='center';
+    }
+    if(s.text?.siteBrand)document.title=s.text.siteBrand;
+  }
+  applySiteCustomization().catch(()=>{});
   load().then(()=>{
     const shareId=new URLSearchParams(location.search).get('song');if(shareId){const shared=songs.find(s=>s.id===shareId);if(shared)showPlaying(shared,[shared]);}
     const select=$('comment-song');
