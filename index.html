@@ -126,7 +126,7 @@
     .comment-like{margin-top:10px}
     .pinned-label{display:inline-block;margin-top:8px;color:#a05b43;font:11px Arial,sans-serif}
     #song-of-day{position:relative;isolation:isolate;display:block;overflow:hidden;min-height:0;margin:0 clamp(18px,5vw,54px) 20px;padding:13px 16px;border:1px solid #f3b18f;border-radius:18px;color:#fff;background:linear-gradient(115deg,#713542,#b66f70 58%,#d49a77);box-shadow:0 8px 22px #71354222}
-    #song-of-day:before{content:"";position:absolute;z-index:-2;inset:0;background:radial-gradient(circle at 78% 28%,#ffd89a 0 8%,#ffd89a88 8.4%,transparent 21%),linear-gradient(180deg,transparent 0 48%,#71354222 49%,#4e2631aa 100%),linear-gradient(110deg,#f28a70 0%,#d96f69 38%,#a95361 72%,#713542 100%)}
+    #song-of-day:before{content:"";position:absolute;z-index:-2;inset:0;background:linear-gradient(90deg,rgba(78,38,49,.22),rgba(78,38,49,.10)),var(--sod-custom-image,none),radial-gradient(circle at 78% 28%,#ffd89a 0 8%,#ffd89a88 8.4%,transparent 21%),linear-gradient(180deg,transparent 0 48%,#71354222 49%,#4e2631aa 100%),linear-gradient(110deg,#f28a70 0%,#d96f69 38%,#a95361 72%,#713542 100%);background-size:cover,cover,auto,auto,auto;background-position:center,center,center,center,center}
     #song-of-day:after{content:"";position:absolute;z-index:-1;inset:0;background:repeating-linear-gradient(0deg,transparent 0 17px,#fff1 18px,#fff1 19px,transparent 20px 34px);opacity:.18;pointer-events:none}
     #song-of-day[hidden]{display:none}
     .sod-content{position:relative;max-width:560px;margin:0 auto;padding:0}
@@ -273,6 +273,6 @@
   <footer data-custom="footer">Made with love ♡ · Anna's Song</footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
-  <script src="app.js?v=20261113-sodbg1"></script>
+  <script src="app.js?v=20261113-sodbg2"></script>
 </body>
 </html>
