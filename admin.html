@@ -394,7 +394,7 @@ async function loadVisitors(){
 }
 
 $('refresh-visitors').addEventListener('click',loadVisitors);
-setInterval(refreshVisitAgoLabels,30000);
+setInterval(()=>{refreshVisitAgoLabels();if(!$('visitors-view').hidden)loadVisitors();},30000);
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 
 const defaultCustomization={
