@@ -16,7 +16,7 @@
   if(!visitorId){visitorId=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random());try{localStorage.setItem('anna-visitor-id',visitorId)}catch(_){}}
   const visitorDevice=/tablet|ipad/i.test(navigator.userAgent)?'Tablet':(/mobile|android|iphone/i.test(navigator.userAgent)?'Mobile':'Computer');
   const visitNameKey='anna-visitor-name';
-  const recordVisit=name=>db.from('site_visits').insert({visitor_id:visitorId,visitor_name:name||null,device_type:visitorDevice}).then(()=>{});
+  const recordVisit=name=>db.from('site_visits').insert({visitor_id:visitorId,visitor_name:name,device_type:visitorDevice}).then(()=>{});
   let visitorName=localStorage.getItem(visitNameKey)||'';
   if(visitorName){recordVisit(visitorName);}
   else{
@@ -26,13 +26,9 @@
     const title=document.createElement('h2');title.textContent='Welcome to Anna’s Song 💗';title.style.cssText='margin:0 0 8px;font-size:23px';
     const desc=document.createElement('p');desc.textContent='What should we call you? Your name will appear in the site visitor list.';desc.style.cssText='font:14px Arial,sans-serif;line-height:1.5;color:#8d6d68;margin:0 0 15px';
     const field=document.createElement('input');field.type='text';field.maxLength=50;field.placeholder='Your name';field.autocomplete='nickname';field.required=true;field.style.cssText='box-sizing:border-box;width:100%;padding:12px;border:1px solid #dba6a0;border-radius:12px;background:white;font:16px Arial,sans-serif;color:#4e3032';
-    const actions=document.createElement('div');actions.style.cssText='display:flex;gap:9px;margin-top:14px';
-    const enter=document.createElement('button');enter.type='submit';enter.textContent='Continue';enter.style.cssText='flex:1;padding:11px;border:0;border-radius:12px;background:#713542;color:white;font-weight:bold';
-    const skip=document.createElement('button');skip.type='button';skip.textContent='Skip';skip.style.cssText='padding:11px 16px;border:1px solid #dba6a0;border-radius:12px;background:transparent;color:#713542';
-    actions.append(enter,skip);panel.append(title,desc,field,actions);shade.append(panel);document.body.append(shade);
-    const finish=()=>{const name=field.value.trim().slice(0,50);if(name){visitorName=name;try{localStorage.setItem(visitNameKey,name)}catch(_){}}recordVisit(name);shade.remove();};
-    panel.addEventListener('submit',e=>{e.preventDefault();if(!field.value.trim()){field.focus();return;}finish();});
-    skip.addEventListener('click',()=>finish());
+    const enter=document.createElement('button');enter.type='submit';enter.textContent='Continue';enter.style.cssText='width:100%;margin-top:14px;padding:11px;border:0;border-radius:12px;background:#713542;color:white;font-weight:bold';
+    panel.append(title,desc,field,enter);shade.append(panel);document.body.append(shade);
+    panel.addEventListener('submit',e=>{e.preventDefault();const name=field.value.trim().slice(0,50);if(!name){field.focus();return;}visitorName=name;try{localStorage.setItem(visitNameKey,name)}catch(_){}recordVisit(name);shade.remove();});
     field.focus();
   }
   const publicUrl=(p,bucket=window.SONGS_BUCKET)=>p?db.storage.from(bucket||window.SONGS_BUCKET).getPublicUrl(p).data.publicUrl:'';
