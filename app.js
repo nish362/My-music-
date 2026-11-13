@@ -404,6 +404,16 @@
       if(hero)hero.style.backgroundImage='linear-gradient(90deg,#fff8edee,#fff8ed99),url("'+heroImage.replace(/["\\]/g,'')+'")';
       if(hero)hero.style.backgroundSize='cover';if(hero)hero.style.backgroundPosition='center';
     }
+    const songOfDayImage=s.songOfDayImage;
+    if(typeof songOfDayImage==='string'&&/^https?:\/\//i.test(songOfDayImage)){
+      const songOfDay=document.getElementById('song-of-day');
+      if(songOfDay){
+        const safeImage=songOfDayImage.replace(/["\\]/g,'');
+        songOfDay.style.backgroundImage='linear-gradient(90deg,rgba(255,248,237,.78),rgba(255,248,237,.58)),url("'+safeImage+'")';
+        songOfDay.style.backgroundSize='cover';
+        songOfDay.style.backgroundPosition='center';
+      }
+    }
     if(s.text?.siteBrand)document.title=s.text.siteBrand;
   }
   applySiteCustomization().catch(()=>{});
