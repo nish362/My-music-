@@ -193,6 +193,9 @@
 </div>
 <h3>Hero background image</h3>
 <label>Image URL (optional)<input type="url" id="custom-hero-image" placeholder="https://..."></label>
+<h3>Song of the Day background image</h3>
+<label>Image URL (optional)<input type="url" id="custom-sod-image" placeholder="https://..."></label>
+<p class="muted">Paste an image URL to change the background behind the Song of the Day player. Leave blank for the default background.</p>
 <h3>Show / hide sections</h3>
 <div class="check-list">
 <label><input type="checkbox" data-visible="favorites" checked> Favourites</label>
@@ -409,7 +412,7 @@ const defaultCustomization={
  heroImage:""
 };
 function readCustomizationForm(){
- const settings={text:{},colors:{},visibility:{},heroImage:$('custom-hero-image').value.trim()};
+ const settings={text:{},colors:{},visibility:{},heroImage:$('custom-hero-image').value.trim(),songOfDayImage:$('custom-sod-image').value.trim()};
  document.querySelectorAll('[data-setting]').forEach(el=>settings.text[el.dataset.setting]=el.value.trim());
  document.querySelectorAll('[data-color]').forEach(el=>settings.colors[el.dataset.color]=el.value);
  document.querySelectorAll('[data-visible]').forEach(el=>settings.visibility[el.dataset.visible]=el.checked);
@@ -421,6 +424,7 @@ function fillCustomizationForm(settings){
  document.querySelectorAll('[data-color]').forEach(el=>{el.value=s.colors?.[el.dataset.color]??defaultCustomization.colors[el.dataset.color];});
  document.querySelectorAll('[data-visible]').forEach(el=>{el.checked=s.visibility?.[el.dataset.visible]??true;});
  $('custom-hero-image').value=s.heroImage||'';
+ $('custom-sod-image').value=s.songOfDayImage||'';
 }
 async function loadCustomization(){
  const msg=$('customize-msg');say(msg,'Loading saved website settings…');
