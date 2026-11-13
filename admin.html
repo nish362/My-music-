@@ -150,7 +150,7 @@
 <section id="customize-view" hidden>
 <section class="panel">
 <h2>🎨 Website Customize</h2>
-<p class="muted">Yahan changes karke Save karo. Public website par sabko naye changes dikhenge. Preview ke liye pehle Save karna zaroori nahi—fields badalte hi neeche preview update hoga.</p>
+<p class="muted">Yahan changes karke Save karo. Public website par sabko naye changes dikhenge. Save karne ke baad public website par naye changes dikhne lagenge. Restore defaults se fields purani settings par lautengi; unhe publish karne ke liye Save dabana.</p>
 <h3>Website words & headings</h3>
 <form id="customize-form">
 <div class="two">
@@ -362,7 +362,8 @@ $('customize-form').addEventListener('submit',async e=>{
  finally{button.disabled=false;}
 });
 $('reset-customization').addEventListener('click',()=>fillCustomizationForm(defaultCustomization));
-\nasync function refreshAll(){
+
+async function refreshAll(){
  const [s,a,l]=await Promise.all([
   db.from('songs').select('*').order('created_at',{ascending:false}),
   db.from('albums').select('*').order('created_at',{ascending:false}),
