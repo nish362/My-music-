@@ -309,16 +309,34 @@ function formatVisitAgo(timestamp){
 }
 function refreshVisitAgoLabels(){
  document.querySelectorAll('[data-visit-times]').forEach(el=>{
-  try{el.textContent=JSON.parse(el.dataset.visitTimes).map(formatVisitAgo).join(' · ');}catch(_){}
+  try{
+   const visits=JSON.parse(el.dataset.visitTimes),groups=new Map();
+   const now=new Date(),today=new Date(now);today.setHours(0,0,0,0);
+   const yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
+   visits.forEach(value=>{
+    const d=new Date(value),day=new Date(d);day.setHours(0,0,0,0);
+    const key=day.getTime();if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push(value);
+   });
+   const parts=[...groups.entries()].sort((a,b)=>b[0]-a[0]).map(([key,items])=>{
+    if(key===today.getTime())return items.map(formatVisitAgo).join(', ');
+    if(key===yesterday.getTime())return 'Yesterday · '+items.length+' visit'+(items.length===1?'':'s');
+    const date=new Date(key).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:new Date(key).getFullYear()===now.getFullYear()?undefined:'numeric'});
+    return date+' · '+items.length+' visit'+(items.length===1?'':'s');
+   });
+   el.textContent=parts.join('  |  ');
+  }catch(_){}
  });
 }
 async function loadVisitors(){
  const box=$('visitor-list');box.textContent='Loading visitors…';
  const {data,error}=await db.from('site_visits').select('visitor_id,visitor_name,visited_at,device_type').order('visited_at',{ascending:false}).limit(2000);
  if(error){box.textContent='Could not load visitors: '+error.message;return;}
- const rows=data||[],map=new Map();
+ // Hide the admin's own browser entry (Nishant) from visitor counts and the list.
+ const rows=(data||[]).filter(v=>!/^nishant(?:\\b|\\s)/i.test((v.visitor_name||'').trim()) && (v.visitor_name||'').trim().toLowerCase()!=='nishant');
+ const map=new Map();
  rows.forEach(v=>{
-  const item=map.get(v.visitor_id)||{id:v.visitor_id,name:v.visitor_name||'',visits:[],device:v.device_type};
+  const item=map.get(v.visitor_id)||{name:v.visitor_name||'',visits:[],device:v.device_type};
   if(v.visitor_name)item.name=v.visitor_name;
   item.visits.push(v.visited_at);
   map.set(v.visitor_id,item);
