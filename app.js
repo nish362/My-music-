@@ -22,7 +22,7 @@
     return;
   }
   const recordVisit=name=>db.from('site_visits').insert({visitor_id:visitorId,visitor_name:name,device_type:visitorDevice}).then(()=>{});
-  const updatePresence=name=>db.from('visitor_presence').upsert({visitor_id:visitorId,visitor_name:name||'',device_type:visitorDevice,last_seen:new Date().toISOString()},{onConflict:'visitor_id'}).then(()=>{});
+  const updatePresence=name=>db.rpc('report_visitor_presence',{p_visitor_id:visitorId,p_visitor_name:name||'',p_device_type:visitorDevice}).then(({error})=>{if(error)console.warn('Visitor presence update failed:',error.message);});
   let presenceTimer=null;
   const startPresence=name=>{
     updatePresence(name);
