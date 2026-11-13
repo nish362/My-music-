@@ -1,4 +1,4 @@
-(() => {
+(async () => {
   const $ = id => document.getElementById(id);
   const grid=$('songs-grid'),audio=$('audio'),search=$('search'),count=$('song-count');
   const albumsGrid=$('albums-grid');
@@ -16,9 +16,22 @@
   if(!visitorId){visitorId=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random());try{localStorage.setItem('anna-visitor-id',visitorId)}catch(_){}}
   const visitorDevice=/tablet|ipad/i.test(navigator.userAgent)?'Tablet':(/mobile|android|iphone/i.test(navigator.userAgent)?'Mobile':'Computer');
   const visitNameKey='anna-visitor-name';
+  const {data:blocked,error:blockCheckError}=await db.rpc('is_visitor_blocked',{p_visitor_id:visitorId});
+  if(!blockCheckError&&blocked){
+    document.body.innerHTML='<main style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#fff8ed;color:#4e3032;text-align:center;font-family:Georgia,serif"><section><h1>Access unavailable</h1><p>This browser is currently blocked from entering Anna’s Song.</p></section></main>';
+    return;
+  }
   const recordVisit=name=>db.from('site_visits').insert({visitor_id:visitorId,visitor_name:name,device_type:visitorDevice}).then(()=>{});
+  const updatePresence=name=>db.from('visitor_presence').upsert({visitor_id:visitorId,visitor_name:name||'',device_type:visitorDevice,last_seen:new Date().toISOString()},{onConflict:'visitor_id'}).then(()=>{});
+  let presenceTimer=null;
+  const startPresence=name=>{
+    updatePresence(name);
+    if(presenceTimer)clearInterval(presenceTimer);
+    presenceTimer=setInterval(()=>{if(!document.hidden)updatePresence(name);},20000);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)updatePresence(name);});
+  };
   let visitorName=localStorage.getItem(visitNameKey)||'';
-  if(visitorName){recordVisit(visitorName);}
+  if(visitorName){recordVisit(visitorName);startPresence(visitorName);}
   else{
     const shade=document.createElement('div');shade.id='anna-name-welcome';
     shade.style.cssText='position:fixed;inset:0;z-index:99999;background:#24131dcc;display:grid;place-items:center;padding:20px;backdrop-filter:blur(5px)';
@@ -28,7 +41,7 @@
     const field=document.createElement('input');field.type='text';field.maxLength=50;field.placeholder='Your name';field.autocomplete='nickname';field.required=true;field.style.cssText='box-sizing:border-box;width:100%;padding:12px;border:1px solid #dba6a0;border-radius:12px;background:white;font:16px Arial,sans-serif;color:#4e3032';
     const enter=document.createElement('button');enter.type='submit';enter.textContent='Continue';enter.style.cssText='width:100%;margin-top:14px;padding:11px;border:0;border-radius:12px;background:#713542;color:white;font-weight:bold';
     panel.append(title,desc,field,enter);shade.append(panel);document.body.append(shade);
-    panel.addEventListener('submit',e=>{e.preventDefault();const name=field.value.trim().slice(0,50);if(!name){field.focus();return;}visitorName=name;try{localStorage.setItem(visitNameKey,name)}catch(_){}recordVisit(name);shade.remove();});
+    panel.addEventListener('submit',e=>{e.preventDefault();const name=field.value.trim().slice(0,50);if(!name){field.focus();return;}visitorName=name;try{localStorage.setItem(visitNameKey,name)}catch(_){}recordVisit(name);startPresence(name);shade.remove();});
     field.focus();
   }
   const publicUrl=(p,bucket=window.SONGS_BUCKET)=>p?db.storage.from(bucket||window.SONGS_BUCKET).getPublicUrl(p).data.publicUrl:'';
