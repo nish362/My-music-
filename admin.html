@@ -223,6 +223,7 @@
 </div>
 <div class="toolbar-row"><h3>Visitor list</h3><button type="button" class="ghost small" id="refresh-visitors">Refresh</button></div>
 <div id="visitor-list" class="admin-list">Loading visitor list…</div>
+<h3 style="margin-top:22px">Blocked visitors</h3><div id="blocked-visitor-list" class="admin-list">Loading blocked list…</div>
 </section>
 </section>
 </section>
@@ -329,34 +330,67 @@ function refreshVisitAgoLabels(){
  });
 }
 async function loadVisitors(){
- const box=$('visitor-list');box.textContent='Loading visitors…';
- const {data,error}=await db.from('site_visits').select('visitor_id,visitor_name,visited_at,device_type').order('visited_at',{ascending:false}).limit(2000);
- if(error){box.textContent='Could not load visitors: '+error.message;return;}
- // Hide the admin's own browser entry (Nishant) from visitor counts and the list.
- const rows=(data||[]).filter(v=>!(v.visitor_name||'').trim().toLowerCase().startsWith('nishant'));
+ const box=$('visitor-list'),blockedBox=$('blocked-visitor-list');box.textContent='Loading visitors…';
+ const [visitsResult,presenceResult,blocksResult]=await Promise.all([
+  db.from('site_visits').select('visitor_id,visitor_name,visited_at,device_type').order('visited_at',{ascending:false}).limit(2000),
+  db.from('visitor_presence').select('visitor_id,visitor_name,device_type,last_seen'),
+  db.from('visitor_blocks').select('visitor_id,visitor_name,blocked_at').order('blocked_at',{ascending:false})
+ ]);
+ if(visitsResult.error){box.textContent='Could not load visitors: '+visitsResult.error.message;return;}
+ if(presenceResult.error){box.textContent='Presence setup error: '+presenceResult.error.message;return;}
+ if(blocksResult.error){blockedBox.textContent='Could not load blocked list: '+blocksResult.error.message;return;}
+ const isAdminName=n=>(n||'').trim().toLowerCase().startsWith('nishant');
+ const rows=(visitsResult.data||[]).filter(v=>!isAdminName(v.visitor_name));
+ const presence=(presenceResult.data||[]).filter(v=>!isAdminName(v.visitor_name));
+ const blocked=blocksResult.data||[];
+ const blockedIds=new Set(blocked.map(v=>v.visitor_id));
+ const live=new Map(presence.map(v=>[v.visitor_id,v]));
  const map=new Map();
  rows.forEach(v=>{
-  const item=map.get(v.visitor_id)||{name:v.visitor_name||'',visits:[],device:v.device_type};
+  if(blockedIds.has(v.visitor_id))return;
+  const item=map.get(v.visitor_id)||{id:v.visitor_id,name:v.visitor_name||'',visits:[],device:v.device_type};
   if(v.visitor_name)item.name=v.visitor_name;
-  item.visits.push(v.visited_at);
-  map.set(v.visitor_id,item);
+  item.visits.push(v.visited_at);map.set(v.visitor_id,item);
  });
  const visitors=[...map.values()].sort((a,b)=>new Date(b.visits[0])-new Date(a.visits[0]));
  const today=new Date();today.setHours(0,0,0,0);
  $('visitor-total').textContent=visitors.length;
- $('visit-total').textContent=rows.length;
- $('visitor-today').textContent=rows.filter(v=>new Date(v.visited_at)>=today).length;
+ $('visit-total').textContent=rows.filter(v=>!blockedIds.has(v.visitor_id)).length;
+ $('visitor-today').textContent=rows.filter(v=>!blockedIds.has(v.visitor_id)&&new Date(v.visited_at)>=today).length;
  box.innerHTML='';
- if(!visitors.length){box.textContent='Abhi koi visitor record nahi hua. Website par aane ke baad visitors yahan dikhenge.';return;}
+ if(!visitors.length){box.textContent='Abhi koi visitor record nahi hua.';}
  visitors.forEach(v=>{
   const row=document.createElement('div');row.className='admin-album';
+  const head=document.createElement('div');head.className='toolbar-row';
   const name=document.createElement('strong');name.textContent=v.name||'Unnamed visitor';
-  const meta=document.createElement('small');
-  meta.textContent=v.device+' · '+v.visits.length+' visit(s) · ';
-  const times=document.createElement('span');times.dataset.visitTimes=JSON.stringify(v.visits);
-  meta.append(times);row.append(name,meta);box.append(row);
+  const status=document.createElement('span'),p=live.get(v.id),online=!!p&&(Date.now()-new Date(p.last_seen).getTime()<65000);
+  status.style.cssText='display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);white-space:nowrap';
+  const dot=document.createElement('i');dot.style.cssText='display:inline-block;width:9px;height:9px;border-radius:50%;background:'+(online?'#27c46b':'#e34d59')+';box-shadow:0 0 0 3px '+(online?'#27c46b22':'#e34d5922');
+  status.append(dot,document.createTextNode(online?'Online':'Offline'));
+  head.append(name,status);
+  const meta=document.createElement('small');meta.textContent=v.device+' · '+v.visits.length+' visit(s) · ';
+  const times=document.createElement('span');times.dataset.visitTimes=JSON.stringify(v.visits);meta.append(times);
+  const action=document.createElement('button');action.type='button';action.className='danger small';action.textContent='Block';action.onclick=async()=>{
+   if(!confirm('Block '+(v.name||'this visitor')+'? This browser ID will no longer be able to enter the website.'))return;
+   action.disabled=true;const {error}=await db.from('visitor_blocks').upsert({visitor_id:v.id,visitor_name:v.name||'Visitor'},{onConflict:'visitor_id'});
+   if(error){alert('Block failed: '+error.message);action.disabled=false;return;}loadVisitors();
+  };
+  row.append(head,meta,action);box.append(row);
  });
  refreshVisitAgoLabels();
+ blockedBox.innerHTML='';
+ if(!blocked.length){blockedBox.textContent='No blocked visitors.';}
+ blocked.forEach(v=>{
+  const row=document.createElement('div');row.className='admin-album';
+  const name=document.createElement('strong');name.textContent=v.visitor_name||'Blocked visitor';
+  const id=document.createElement('small');id.textContent='Blocked browser ID: '+v.visitor_id;
+  const unblock=document.createElement('button');unblock.type='button';unblock.className='ghost small';unblock.textContent='Unblock';unblock.onclick=async()=>{
+   if(!confirm('Unblock '+(v.visitor_name||'this visitor')+'?'))return;
+   unblock.disabled=true;const {error}=await db.from('visitor_blocks').delete().eq('visitor_id',v.visitor_id);
+   if(error){alert('Unblock failed: '+error.message);unblock.disabled=false;return;}loadVisitors();
+  };
+  row.append(name,id,unblock);blockedBox.append(row);
+ });
 }
 
 $('refresh-visitors').addEventListener('click',loadVisitors);
