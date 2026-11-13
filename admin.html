@@ -71,6 +71,7 @@
 <button type="button" class="ghost" data-tab="guestbook">Guestbook</button>
 <button type="button" class="ghost" data-tab="community">Mic Drop</button>
 <button type="button" class="ghost" data-tab="visitors">Visitors</button>
+<button type="button" class="ghost" data-tab="customize">Customize</button>
 </nav>
 
 <section id="songs-view">
@@ -145,6 +146,71 @@
 </section>
 <section id="community-view" hidden>
 <section class="panel"><h2>Song submissions</h2><p class="muted">Friends can send recordings or audio files here. Listen first, then approve to publish on Anna’s Song.</p><div id="friend-submissions">Loading…</div></section>
+</section>
+<section id="customize-view" hidden>
+<section class="panel">
+<h2>🎨 Website Customize</h2>
+<p class="muted">Yahan changes karke Save karo. Public website par sabko naye changes dikhenge. Preview ke liye pehle Save karna zaroori nahi—fields badalte hi neeche preview update hoga.</p>
+<h3>Website words & headings</h3>
+<form id="customize-form">
+<div class="two">
+<label>Website name<input data-setting="siteBrand" value="Anna's Song ♡" maxlength="70"></label>
+<label>Top tagline<input data-setting="tagline" value="little songs · lovely memories" maxlength="100"></label>
+<label>Hero small heading<input data-setting="heroEyebrow" value="A LITTLE MUSIC CORNER" maxlength="80"></label>
+<label>Main heading<input data-setting="heroTitle" value="Every song holds" maxlength="100"></label>
+<label>Highlighted heading<input data-setting="heroHighlight" value="a memory." maxlength="100"></label>
+<label>Welcome description<textarea data-setting="heroDescription" rows="2" maxlength="240">Soft melodies, familiar voices and moments worth keeping. Pick a song and make yourself at home.</textarea></label>
+<label>Favourites section<input data-setting="favoritesTitle" value="💗 Your favourites" maxlength="80"></label>
+<label>Recently played section<input data-setting="recentTitle" value="🕘 Recently played" maxlength="80"></label>
+<label>Albums section<input data-setting="albumsTitle" value="💿 Albums" maxlength="80"></label>
+<label>Songs section<input data-setting="songsTitle" value="🎶 Made of melodies" maxlength="80"></label>
+<label>Friends songs heading<input data-setting="communityTitle" value="Made of melodies ✨" maxlength="80"></label>
+<label>Friends songs description<textarea data-setting="communityDescription" rows="2" maxlength="240">Doston ki awaaz, unke original songs — sab ek jagah. 🎤</textarea></label>
+<label>Upload section heading<input data-setting="uploadTitle" value="🎵 Have a new melody?" maxlength="100"></label>
+<label>Upload section description<input data-setting="uploadDescription" value="Add another song to your little music corner." maxlength="180"></label>
+<label>Mic Drop badge<input data-setting="micBadge" value="FRIENDS ONLY · OPEN MIC" maxlength="80"></label>
+<label>Mic Drop heading<input data-setting="micTitle" value="Mic Drop" maxlength="80"></label>
+<label>Mic Drop description<textarea data-setting="micDescription" rows="2" maxlength="240">Apni awaaz lao, apna gaana sunao. Record karo ya upload karo — stage tumhara hai!</textarea></label>
+<label>Guestbook heading<input data-setting="guestbookTitle" value="💌 Little Guestbook" maxlength="80"></label>
+<label>Guestbook small text<input data-setting="guestbookSubtitle" value="leave a lovely note" maxlength="100"></label>
+<label>Home navigation<input data-setting="navHome" value="Home" maxlength="30"></label>
+<label>Search navigation<input data-setting="navSearch" value="Search" maxlength="30"></label>
+<label>Mic navigation<input data-setting="navMic" value="Mic Drop" maxlength="30"></label>
+<label>Friends navigation<input data-setting="navCommunity" value="Made of melodies" maxlength="30"></label>
+<label>Guestbook navigation<input data-setting="navGuestbook" value="Guestbook" maxlength="30"></label>
+<label>Footer text<input data-setting="footer" value="Made with love ♡ · Anna's Song" maxlength="120"></label>
+</div>
+<h3>Colours</h3>
+<div class="two">
+<label>Wine / main colour<input type="color" data-color="wine" value="#713542"></label>
+<label>Rose / accent colour<input type="color" data-color="rose" value="#b66f70"></label>
+<label>Light rose<input type="color" data-color="rose-light" value="#dba6a0"></label>
+<label>Cream<input type="color" data-color="cream" value="#fff8ed"></label>
+<label>Paper background<input type="color" data-color="paper" value="#f5e7d5"></label>
+<label>Text colour<input type="color" data-color="ink" value="#4e3032"></label>
+<label>Muted text<input type="color" data-color="muted" value="#8d6d68"></label>
+<label>Gold accent<input type="color" data-color="gold" value="#c99b70"></label>
+</div>
+<h3>Hero background image</h3>
+<label>Image URL (optional)<input type="url" id="custom-hero-image" placeholder="https://..."></label>
+<h3>Show / hide sections</h3>
+<div class="check-list">
+<label><input type="checkbox" data-visible="favorites" checked> Favourites</label>
+<label><input type="checkbox" data-visible="recent" checked> Recently played</label>
+<label><input type="checkbox" data-visible="albums" checked> Albums</label>
+<label><input type="checkbox" data-visible="songs" checked> Songs</label>
+<label><input type="checkbox" data-visible="community" checked> Friends’ songs</label>
+<label><input type="checkbox" data-visible="upload" checked> Upload section</label>
+<label><input type="checkbox" data-visible="mic" checked> Mic Drop</label>
+<label><input type="checkbox" data-visible="guestbook" checked> Guestbook</label>
+</div>
+<div class="inline-actions">
+<button class="primary" id="save-customization" type="submit">Save & Publish changes</button>
+<button class="ghost" id="reset-customization" type="button">Restore defaults</button>
+</div>
+</form>
+<p id="customize-msg" class="message"></p>
+</section>
 </section>
 <section id="visitors-view" hidden>
 <section class="panel">
@@ -225,11 +291,11 @@ async function removeFiles(paths){
 }
 function setBusy(v){busy=v;document.querySelectorAll('button').forEach(b=>{if(b.id!=='logout')b.disabled=v;});}
 function switchTab(tab){
- $('songs-view').hidden=tab!=='songs';$('albums-view').hidden=tab!=='albums';$('guestbook-view').hidden=tab!=='guestbook';$('community-view').hidden=tab!=='community';$('visitors-view').hidden=tab!=='visitors';
+ $('songs-view').hidden=tab!=='songs';$('albums-view').hidden=tab!=='albums';$('guestbook-view').hidden=tab!=='guestbook';$('community-view').hidden=tab!=='community';$('visitors-view').hidden=tab!=='visitors';$('customize-view').hidden=tab!=='customize';
  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
  if(tab==='guestbook')loadAdminComments();
  if(tab==='community'){loadFriendSubmissions();}
- if(tab==='visitors'){loadVisitors();}
+ if(tab==='visitors'){loadVisitors();}if(tab==='customize'){loadCustomization();}
 }
 async function loadVisitors(){
  const box=$('visitor-list');box.textContent='Loading visitors…';
@@ -254,7 +320,49 @@ async function loadVisitors(){
 $('refresh-visitors').addEventListener('click',loadVisitors);
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 
-async function refreshAll(){
+const defaultCustomization={
+ text:{
+ siteBrand:"Anna's Song ♡",tagline:"little songs · lovely memories",heroEyebrow:"A LITTLE MUSIC CORNER",heroTitle:"Every song holds",heroHighlight:"a memory.",heroDescription:"Soft melodies, familiar voices and moments worth keeping. Pick a song and make yourself at home.",
+ favoritesTitle:"💗 Your favourites",recentTitle:"🕘 Recently played",albumsTitle:"💿 Albums",songsTitle:"🎶 Made of melodies",communityTitle:"Made of melodies ✨",communityDescription:"Doston ki awaaz, unke original songs — sab ek jagah. 🎤",
+ uploadTitle:"🎵 Have a new melody?",uploadDescription:"Add another song to your little music corner.",micBadge:"FRIENDS ONLY · OPEN MIC",micTitle:"Mic Drop",micDescription:"Apni awaaz lao, apna gaana sunao. Record karo ya upload karo — stage tumhara hai!",
+ guestbookTitle:"💌 Little Guestbook",guestbookSubtitle:"leave a lovely note",navHome:"Home",navSearch:"Search",navMic:"Mic Drop",navCommunity:"Made of melodies",navGuestbook:"Guestbook",footer:"Made with love ♡ · Anna's Song"
+ },
+ colors:{wine:"#713542",rose:"#b66f70","rose-light":"#dba6a0",cream:"#fff8ed",paper:"#f5e7d5",ink:"#4e3032",muted:"#8d6d68",gold:"#c99b70"},
+ visibility:{favorites:true,recent:true,albums:true,songs:true,community:true,upload:true,mic:true,guestbook:true},
+ heroImage:""
+};
+function readCustomizationForm(){
+ const settings={text:{},colors:{},visibility:{},heroImage:$('custom-hero-image').value.trim()};
+ document.querySelectorAll('[data-setting]').forEach(el=>settings.text[el.dataset.setting]=el.value.trim());
+ document.querySelectorAll('[data-color]').forEach(el=>settings.colors[el.dataset.color]=el.value);
+ document.querySelectorAll('[data-visible]').forEach(el=>settings.visibility[el.dataset.visible]=el.checked);
+ return settings;
+}
+function fillCustomizationForm(settings){
+ const s=settings||defaultCustomization;
+ document.querySelectorAll('[data-setting]').forEach(el=>{el.value=s.text?.[el.dataset.setting]??defaultCustomization.text[el.dataset.setting]??'';});
+ document.querySelectorAll('[data-color]').forEach(el=>{el.value=s.colors?.[el.dataset.color]??defaultCustomization.colors[el.dataset.color];});
+ document.querySelectorAll('[data-visible]').forEach(el=>{el.checked=s.visibility?.[el.dataset.visible]??true;});
+ $('custom-hero-image').value=s.heroImage||'';
+}
+async function loadCustomization(){
+ const msg=$('customize-msg');say(msg,'Loading saved website settings…');
+ const {data,error}=await db.from('site_customization').select('settings').eq('id','public').maybeSingle();
+ if(error){say(msg,'Could not load settings: '+error.message,true);fillCustomizationForm(defaultCustomization);return;}
+ fillCustomizationForm(data?.settings||defaultCustomization);say(msg,'Settings loaded. Edit anything and save when ready.');
+}
+$('customize-form').addEventListener('submit',async e=>{
+ e.preventDefault();const button=$('save-customization');button.disabled=true;say($('customize-msg'),'Saving and publishing…');
+ try{
+  const settings=readCustomizationForm();
+  const {data:userData,error:userError}=await db.auth.getUser();if(userError)throw userError;if(!userData.user)throw new Error('Please sign in again.');
+  const {error}=await db.from('site_customization').upsert({id:'public',settings,updated_at:new Date().toISOString()},{onConflict:'id'});
+  if(error)throw error;say($('customize-msg'),'Saved! Public website par changes publish ho gaye. Refresh the public site to see them.');
+ }catch(err){say($('customize-msg'),err.message||'Could not save changes.',true);}
+ finally{button.disabled=false;}
+});
+$('reset-customization').addEventListener('click',()=>fillCustomizationForm(defaultCustomization));
+\nasync function refreshAll(){
  const [s,a,l]=await Promise.all([
   db.from('songs').select('*').order('created_at',{ascending:false}),
   db.from('albums').select('*').order('created_at',{ascending:false}),
