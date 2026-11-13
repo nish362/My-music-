@@ -233,10 +233,10 @@ function switchTab(tab){
 }
 async function loadVisitors(){
  const box=$('visitor-list');box.textContent='Loading visitor IDs…';
- const {data,error}=await db.from('site_visits').select('visitor_id,visited_at,device_type').order('visited_at',{ascending:false}).limit(2000);
+ const {data,error}=await db.from('site_visits').select('visitor_id,visitor_name,visited_at,device_type').order('visited_at',{ascending:false}).limit(2000);
  if(error){box.textContent='Could not load visitors: '+error.message;return;}
  const rows=data||[],map=new Map();
- rows.forEach(v=>{const item=map.get(v.visitor_id)||{id:v.visitor_id,first:v.visited_at,last:v.visited_at,count:0,device:v.device_type};item.count++;if(v.visited_at<item.first)item.first=v.visited_at;if(v.visited_at>item.last){item.last=v.visited_at;item.device=v.device_type;}map.set(v.visitor_id,item);});
+ rows.forEach(v=>{const item=map.get(v.visitor_id)||{id:v.visitor_id,name:v.visitor_name||'',first:v.visited_at,last:v.visited_at,count:0,device:v.device_type};item.count++;if(v.visitor_name)item.name=v.visitor_name;if(v.visited_at<item.first)item.first=v.visited_at;if(v.visited_at>item.last){item.last=v.visited_at;item.device=v.device_type;}map.set(v.visitor_id,item);});
  const visitors=[...map.values()].sort((a,b)=>b.last.localeCompare(a.last));
  const today=new Date();today.setHours(0,0,0,0);
  $('visitor-total').textContent=visitors.length;
@@ -246,7 +246,7 @@ async function loadVisitors(){
  if(!visitors.length){box.textContent='Abhi koi visitor record nahi hua. Website par aane ke baad IDs yahan dikhenge.';return;}
  visitors.forEach(v=>{
   const row=document.createElement('div');row.className='admin-album';
-  const id=document.createElement('strong');id.textContent='Visitor ID: '+v.id;
+  const id=document.createElement('strong');id.textContent=(v.name||'Unnamed visitor')+' · Visitor ID: '+v.id;
   const meta=document.createElement('small');meta.textContent=v.device+' · '+v.count+' visit(s) · First: '+new Date(v.first).toLocaleString()+' · Last: '+new Date(v.last).toLocaleString();
   const copy=document.createElement('button');copy.type='button';copy.className='ghost small';copy.textContent='Copy ID';copy.onclick=async()=>{try{await navigator.clipboard.writeText(v.id);copy.textContent='Copied!';}catch(_){copy.textContent='Copy unavailable';}};
   row.append(id,meta,copy);box.append(row);
