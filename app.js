@@ -409,9 +409,7 @@
       const songOfDay=document.getElementById('song-of-day');
       if(songOfDay){
         const safeImage=songOfDayImage.replace(/["\\]/g,'');
-        songOfDay.style.backgroundImage='linear-gradient(90deg,rgba(255,248,237,.78),rgba(255,248,237,.58)),url("'+safeImage+'")';
-        songOfDay.style.backgroundSize='cover';
-        songOfDay.style.backgroundPosition='center';
+        songOfDay.style.setProperty('--sod-custom-image','url("'+safeImage+'")');
       }
     }
     if(s.text?.siteBrand)document.title=s.text.siteBrand;
