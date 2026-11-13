@@ -333,7 +333,7 @@ async function loadVisitors(){
  const {data,error}=await db.from('site_visits').select('visitor_id,visitor_name,visited_at,device_type').order('visited_at',{ascending:false}).limit(2000);
  if(error){box.textContent='Could not load visitors: '+error.message;return;}
  // Hide the admin's own browser entry (Nishant) from visitor counts and the list.
- const rows=(data||[]).filter(v=>!/^nishant(?:\\b|\\s)/i.test((v.visitor_name||'').trim()) && (v.visitor_name||'').trim().toLowerCase()!=='nishant');
+ const rows=(data||[]).filter(v=>!(v.visitor_name||'').trim().toLowerCase().startsWith('nishant'));
  const map=new Map();
  rows.forEach(v=>{
   const item=map.get(v.visitor_id)||{name:v.visitor_name||'',visits:[],device:v.device_type};
