@@ -70,6 +70,7 @@
 <button type="button" class="ghost" data-tab="albums">Albums</button>
 <button type="button" class="ghost" data-tab="guestbook">Guestbook</button>
 <button type="button" class="ghost" data-tab="community">Mic Drop</button>
+<button type="button" class="ghost" data-tab="visitors">Visitors</button>
 </nav>
 
 <section id="songs-view">
@@ -145,6 +146,19 @@
 <section id="community-view" hidden>
 <section class="panel"><h2>Song submissions</h2><p class="muted">Friends can send recordings or audio files here. Listen first, then approve to publish on Anna’s Song.</p><div id="friend-submissions">Loading…</div></section>
 </section>
+<section id="visitors-view" hidden>
+<section class="panel">
+<h2>👥 Website visitors</h2>
+<p class="muted">Anonymous browser IDs only. Names, Gmail addresses and phone numbers are not collected.</p>
+<div class="stats">
+<div class="stat"><strong id="visitor-total">0</strong><small>Unique browsers</small></div>
+<div class="stat"><strong id="visit-total">0</strong><small>Total visits</small></div>
+<div class="stat"><strong id="visitor-today">0</strong><small>Today</small></div>
+</div>
+<div class="toolbar-row"><h3>Visitor ID list</h3><button type="button" class="ghost small" id="refresh-visitors">Refresh</button></div>
+<div id="visitor-list" class="admin-list">Loading visitor list…</div>
+</section>
+</section>
 </section>
 </main>
 
@@ -211,11 +225,34 @@ async function removeFiles(paths){
 }
 function setBusy(v){busy=v;document.querySelectorAll('button').forEach(b=>{if(b.id!=='logout')b.disabled=v;});}
 function switchTab(tab){
- $('songs-view').hidden=tab!=='songs';$('albums-view').hidden=tab!=='albums';$('guestbook-view').hidden=tab!=='guestbook';$('community-view').hidden=tab!=='community';
+ $('songs-view').hidden=tab!=='songs';$('albums-view').hidden=tab!=='albums';$('guestbook-view').hidden=tab!=='guestbook';$('community-view').hidden=tab!=='community';$('visitors-view').hidden=tab!=='visitors';
  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
  if(tab==='guestbook')loadAdminComments();
  if(tab==='community'){loadFriendSubmissions();}
+ if(tab==='visitors'){loadVisitors();}
 }
+async function loadVisitors(){
+ const box=$('visitor-list');box.textContent='Loading visitor IDs…';
+ const {data,error}=await db.from('site_visits').select('visitor_id,visited_at,device_type').order('visited_at',{ascending:false}).limit(2000);
+ if(error){box.textContent='Could not load visitors: '+error.message;return;}
+ const rows=data||[],map=new Map();
+ rows.forEach(v=>{const item=map.get(v.visitor_id)||{id:v.visitor_id,first:v.visited_at,last:v.visited_at,count:0,device:v.device_type};item.count++;if(v.visited_at<item.first)item.first=v.visited_at;if(v.visited_at>item.last){item.last=v.visited_at;item.device=v.device_type;}map.set(v.visitor_id,item);});
+ const visitors=[...map.values()].sort((a,b)=>b.last.localeCompare(a.last));
+ const today=new Date();today.setHours(0,0,0,0);
+ $('visitor-total').textContent=visitors.length;
+ $('visit-total').textContent=rows.length;
+ $('visitor-today').textContent=rows.filter(v=>new Date(v.visited_at)>=today).length;
+ box.innerHTML='';
+ if(!visitors.length){box.textContent='Abhi koi visitor record nahi hua. Website par aane ke baad IDs yahan dikhenge.';return;}
+ visitors.forEach(v=>{
+  const row=document.createElement('div');row.className='admin-album';
+  const id=document.createElement('strong');id.textContent='Visitor ID: '+v.id;
+  const meta=document.createElement('small');meta.textContent=v.device+' · '+v.count+' visit(s) · First: '+new Date(v.first).toLocaleString()+' · Last: '+new Date(v.last).toLocaleString();
+  const copy=document.createElement('button');copy.type='button';copy.className='ghost small';copy.textContent='Copy ID';copy.onclick=async()=>{try{await navigator.clipboard.writeText(v.id);copy.textContent='Copied!';}catch(_){copy.textContent='Copy unavailable';}};
+  row.append(id,meta,copy);box.append(row);
+ });
+}
+$('refresh-visitors').addEventListener('click',loadVisitors);
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 
 async function refreshAll(){
