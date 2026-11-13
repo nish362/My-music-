@@ -149,13 +149,13 @@
 <section id="visitors-view" hidden>
 <section class="panel">
 <h2>👥 Website visitors</h2>
-<p class="muted">Anonymous browser IDs only. Names, Gmail addresses and phone numbers are not collected.</p>
+<p class="muted">Visitor names and visit activity.</p>
 <div class="stats">
 <div class="stat"><strong id="visitor-total">0</strong><small>Unique browsers</small></div>
 <div class="stat"><strong id="visit-total">0</strong><small>Total visits</small></div>
 <div class="stat"><strong id="visitor-today">0</strong><small>Today</small></div>
 </div>
-<div class="toolbar-row"><h3>Visitor ID list</h3><button type="button" class="ghost small" id="refresh-visitors">Refresh</button></div>
+<div class="toolbar-row"><h3>Visitor list</h3><button type="button" class="ghost small" id="refresh-visitors">Refresh</button></div>
 <div id="visitor-list" class="admin-list">Loading visitor list…</div>
 </section>
 </section>
@@ -232,7 +232,7 @@ function switchTab(tab){
  if(tab==='visitors'){loadVisitors();}
 }
 async function loadVisitors(){
- const box=$('visitor-list');box.textContent='Loading visitor IDs…';
+ const box=$('visitor-list');box.textContent='Loading visitors…';
  const {data,error}=await db.from('site_visits').select('visitor_id,visitor_name,visited_at,device_type').order('visited_at',{ascending:false}).limit(2000);
  if(error){box.textContent='Could not load visitors: '+error.message;return;}
  const rows=data||[],map=new Map();
@@ -246,10 +246,9 @@ async function loadVisitors(){
  if(!visitors.length){box.textContent='Abhi koi visitor record nahi hua. Website par aane ke baad IDs yahan dikhenge.';return;}
  visitors.forEach(v=>{
   const row=document.createElement('div');row.className='admin-album';
-  const id=document.createElement('strong');id.textContent=(v.name||'Unnamed visitor')+' · Visitor ID: '+v.id;
+  const id=document.createElement('strong');id.textContent=v.name||'Unnamed visitor';
   const meta=document.createElement('small');meta.textContent=v.device+' · '+v.count+' visit(s) · First: '+new Date(v.first).toLocaleString()+' · Last: '+new Date(v.last).toLocaleString();
-  const copy=document.createElement('button');copy.type='button';copy.className='ghost small';copy.textContent='Copy ID';copy.onclick=async()=>{try{await navigator.clipboard.writeText(v.id);copy.textContent='Copied!';}catch(_){copy.textContent='Copy unavailable';}};
-  row.append(id,meta,copy);box.append(row);
+  row.append(id,meta);box.append(row);
  });
 }
 $('refresh-visitors').addEventListener('click',loadVisitors);
